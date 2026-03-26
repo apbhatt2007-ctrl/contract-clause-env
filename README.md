@@ -124,19 +124,25 @@ Dense per-step rewards that provide signal at every step:
 
 ## Baseline Inference
 
+The baseline runs **100% free** using rule-based keyword matching (no API key needed):
+
 ```bash
-export OPENAI_API_KEY=sk-proj-your-key-here
-python baseline.py                          # Run all tasks
-python baseline.py --task clause_identification --verbose
+# Free rule-based mode (default)
+python baseline.py --verbose                              # Run all tasks
+python baseline.py --task clause_identification --verbose  # Run one task
+
+# Optional: OpenAI mode (costs ~$0.01-0.05)
+# export OPENAI_API_KEY=sk-proj-your-key-here
+# python baseline.py --mode openai --verbose
 ```
 
-### Expected Baseline Scores
+### Baseline Scores (Rule-Based)
 
-| Task | Difficulty | Expected Score |
-|------|-----------|---------------|
-| Clause Identification | Easy | 0.70 – 0.90 |
-| Risk Flagging | Medium | 0.40 – 0.60 |
-| Contract Comparison | Hard | 0.25 – 0.45 |
+| Task | Difficulty | Score |
+|------|-----------|-------|
+| Clause Identification | Easy | 0.57 / 1.0 |
+| Risk Flagging | Medium | 0.60 / 1.0 |
+| Contract Comparison | Hard | 0.46 / 1.0 |
 
 ---
 
@@ -157,7 +163,7 @@ contract_clause_env/
 ├── models.py                 # Pydantic v2 models
 ├── openenv.yaml              # Environment manifest
 ├── pyproject.toml             # Package config
-├── baseline.py               # OpenAI API inference
+├── baseline.py               # Rule-based baseline (free, no API key)
 ├── client.py                 # Async HTTP client
 ├── data/
 │   ├── __init__.py            # Data loader

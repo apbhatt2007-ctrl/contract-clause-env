@@ -1,0 +1,69 @@
+name: contract_clause_env
+description: >
+  An OpenEnv reinforcement learning environment for legal contract analysis.
+  The agent reviews contracts, identifies clause types, flags hidden risks,
+  assesses severity, compares contract versions, and produces analysis summaries.
+version: "1.0.0"
+author: "Hackathon Team"
+
+server:
+  entrypoint: server/app.py
+  port: 7860
+  framework: fastapi
+
+tasks:
+  - id: clause_identification
+    name: Clause Identification
+    difficulty: easy
+    max_steps: 10
+    description: >
+      Given a clean employment contract with 5-7 sections, identify and
+      classify each clause type from a predefined set of legal clause categories.
+
+  - id: risk_flagging
+    name: Risk Flagging & Analysis
+    difficulty: medium
+    max_steps: 25
+    description: >
+      Given a vendor/service contract with hidden risky clauses, identify risks,
+      classify their severity (low/medium/high/critical), and explain why they
+      are risky using legal reasoning.
+
+  - id: contract_comparison
+    name: Multi-Contract Comparison & Redlining
+    difficulty: hard
+    max_steps: 50
+    description: >
+      Given two versions of a contract (original + revised), find all changes,
+      assess whether each change is favorable/neutral/unfavorable, suggest
+      counter-amendments for unfavorable changes, and produce an executive summary.
+
+endpoints:
+  - path: /health
+    method: GET
+    description: Health check
+  - path: /tasks
+    method: GET
+    description: List all available tasks
+  - path: /reset
+    method: POST
+    description: Reset environment with task_id and contract_index
+  - path: /step
+    method: POST
+    description: Take one step with a ContractAction
+  - path: /state
+    method: GET
+    description: Get current episode state
+  - path: /grader
+    method: GET
+    description: Get deterministic grade for current episode
+  - path: /baseline
+    method: GET
+    description: Information about running the baseline script
+  - path: /ws
+    method: WebSocket
+    description: Real-time WebSocket interface
+
+docker:
+  dockerfile: server/Dockerfile
+  port: 7860

@@ -1,26 +1,33 @@
 # Contract Clause Analysis — OpenEnv Environment
 
-An OpenEnv reinforcement learning environment for legal contract clause analysis,
-built for the **Meta PyTorch OpenEnv Hackathon** (Scaler School of Technology).
+> **Meta PyTorch OpenEnv Hackathon** · Scaler School of Technology  
+> **Team:** Atharva Bhatt
 
-An AI agent reviews legal contracts in a simulated workplace workflow:
-identifying clause types, flagging hidden risks, comparing contract versions,
-and producing analysis summaries.
+A reinforcement learning environment where an AI agent learns to review legal contracts — identifying clause types, detecting hidden risks, and comparing contract revisions like a junior associate at a law firm would.
+
+## Why This Problem?
+
+Legal contract review is tedious, error-prone, and expensive. Junior lawyers spend hours combing through vendor agreements looking for auto-renewal traps, liability caps, and unfavorable amendments. This environment lets RL agents practice that exact workflow — reading sections sequentially, making judgments, and receiving feedback — across three difficulty tiers.
 
 ---
 
-## Quick Start
+## Getting Started
+
+### Prerequisites
+- Python 3.11+
+- pip
+
+### Installation & Run
 
 ```bash
-# Install dependencies
 pip install -r server/requirements.txt
-
-# Start the server
 uvicorn server.app:app --host 0.0.0.0 --port 7860
+```
 
-# Test health endpoint
+Verify it's running:
+```bash
 curl http://localhost:7860/health
-# → {"status": "ok"}
+# {"status": "ok"}
 ```
 
 ### Docker
@@ -32,127 +39,101 @@ docker run -p 7860:7860 contract-clause-env
 
 ---
 
-## Tasks
+## Environment Design
 
-| Task | Difficulty | Max Steps | Description |
-|------|-----------|-----------|-------------|
-| `clause_identification` | Easy | 10 | Identify & classify clause types in employment contracts |
-| `risk_flagging` | Medium | 25 | Flag hidden risks in vendor contracts with severity & reasoning |
-| `contract_comparison` | Hard | 50 | Compare contract versions, assess impacts, suggest amendments |
+### Tasks
 
----
+| Task ID | Difficulty | Max Steps | What the Agent Does |
+|---------|-----------|-----------|---------------------|
+| `clause_identification` | Easy | 10 | Classify each section (position, compensation, termination, etc.) |
+| `risk_flagging` | Medium | 25 | Find hidden risky clauses, rate severity, explain why |
+| `contract_comparison` | Hard | 50 | Diff two contract versions, assess impact, suggest counter-amendments |
 
-## Observation Space
+### Data
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `contract_title` | `str` | Title of the current contract |
-| `contract_parties` | `dict` | Parties involved |
-| `current_section_index` | `int` | Current section being reviewed |
-| `current_section_heading` | `str` | Section heading |
-| `current_section_text` | `str` | Full section text (for comparison: original + revised) |
-| `total_sections` | `int` | Total sections in the contract |
-| `identified_clauses` | `list[dict]` | Agent's clause identifications so far |
-| `flagged_risks` | `list[dict]` | Agent's flagged risks so far |
-| `detected_changes` | `list[dict]` | Agent's detected changes (hard task) |
-| `amendments_suggested` | `list[dict]` | Agent's amendment suggestions |
-| `summary_points` | `list[str]` | Agent's summary points |
-| `system_feedback` | `str` | Feedback from the environment |
-| `step_count` / `max_steps` | `int` | Current step and maximum |
-| `reward` | `float` | Current step reward |
-| `cumulative_reward` | `float` | Running total |
-| `done` | `bool` | Whether episode is complete |
+All contract data is embedded directly in Python — no external files needed:
+- **Easy:** 5 realistic employment contracts (30+ clause sections)
+- **Medium:** 5 vendor/service contracts with 17+ subtle embedded risks
+- **Hard:** 3 contract pairs (original vs. revised) with ground truth changes
 
----
+### Observation Space
 
-## Action Space
+The agent receives a structured observation at each step containing:
+- Current section text and heading
+- Contract metadata (title, parties)
+- Agent's accumulated work (identified clauses, flagged risks, etc.)
+- Step count, progress, cumulative reward
+- System feedback on the last action
 
-| Action Type | Required Fields | Description |
-|-------------|-----------------|-------------|
-| `identify_clause` | `clause_index`, `clause_type` | Classify a section's clause type |
-| `flag_risk` | `clause_index`, `clause_type` | Flag a section as containing a risk |
-| `assess_severity` | `clause_index`, `risk_level` | Rate risk severity |
-| `explain_risk` | `clause_index`, `reasoning` | Provide reasoning for a flagged risk |
-| `suggest_amendment` | `clause_index`, `amendment_text` | Propose alternative clause language |
-| `detect_change` | `clause_index` | Flag a change between contract versions |
-| `assess_impact` | `clause_index`, `impact` | Rate change impact |
-| `generate_summary` | `summary_text` | Add a summary point |
-| `next_section` | — | Advance to next section |
-| `submit` | — | Submit work for grading |
+### Action Space
 
----
+| Action | Purpose |
+|--------|---------|
+| `identify_clause` | Label a section's clause type |
+| `flag_risk` | Mark a section as containing a risk |
+| `assess_severity` | Rate risk as low/medium/high/critical |
+| `explain_risk` | Provide reasoning for why a clause is risky |
+| `suggest_amendment` | Propose alternative language |
+| `detect_change` | Identify a modification between contract versions |
+| `assess_impact` | Rate a change as favorable/neutral/unfavorable |
+| `generate_summary` | Add a key takeaway to the summary |
+| `next_section` | Move to the next contract section |
+| `submit` | Finish and submit work for grading |
 
-## Reward Function
+### Reward Signal
 
-Dense per-step rewards that provide signal at every step:
+Dense per-step rewards — the agent gets feedback on every action, not just at the end:
 
-| Event | Reward |
-|-------|--------|
-| Correct clause identification | +0.10 |
-| Semantically close identification | +0.05 |
-| Wrong identification | −0.05 |
-| Correct risk flag | +0.15 |
-| Correct severity | +0.10 |
-| Good reasoning (keywords match ≥50%) | +0.10 |
-| Correct change detection | +0.12 |
-| Correct impact assessment | +0.10 |
-| Good amendment suggestion | +0.15 |
-| Good summary point | +0.08 |
-| Redundant action | −0.03 |
-| Invalid action | −0.05 |
-| Submit (complete) | +0.05 |
-| Submit (incomplete) | −0.10 |
-| Efficiency bonus (< 50% steps) | +0.05 |
-| Episode timeout | −0.10 |
+- **Correct identification:** +0.10
+- **Correct risk flag:** +0.15  
+- **Correct severity / impact:** +0.10
+- **Good reasoning (≥50% keyword match):** +0.10
+- **Wrong answer:** −0.05
+- **Redundant action:** −0.03
+- **Efficiency bonus** for finishing under the step budget
+
+### Grading
+
+Fully deterministic — same actions always produce the same score. Each task has a weighted rubric:
+
+- **Easy:** accuracy of clause identifications (with partial credit for synonyms)
+- **Medium:** 40% risk detection + 30% severity accuracy + 30% reasoning quality − false positive penalty
+- **Hard:** 30% changes found + 25% impact assessment + 25% amendment quality + 20% summary coverage
 
 ---
 
-## API Reference
+## API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/health` | GET | Health check → `{"status": "ok"}` |
-| `/tasks` | GET | List all tasks with metadata |
-| `/reset` | POST | Reset with `{"task_id": "...", "contract_index": 0}` |
-| `/step` | POST | Take action with `ContractAction` JSON |
-| `/state` | GET | Current episode state |
-| `/grader` | GET | Deterministic grade `[0.0, 1.0]` |
-| `/baseline` | GET | Baseline script info |
+| `/health` | GET | Server status |
+| `/tasks` | GET | List available tasks |
+| `/reset` | POST | Start new episode (`task_id`, `contract_index`) |
+| `/step` | POST | Execute an action |
+| `/state` | GET | Current episode metadata |
+| `/grader` | GET | Get deterministic score [0.0, 1.0] |
 | `/ws` | WebSocket | Real-time interaction |
 
 ---
 
-## Baseline Inference
+## Baseline Agent
 
-The baseline runs **100% free** using rule-based keyword matching (no API key needed):
+The baseline uses rule-based keyword matching — no API keys or external services needed:
 
 ```bash
-# Free rule-based mode (default)
-python baseline.py --verbose                              # Run all tasks
-python baseline.py --task clause_identification --verbose  # Run one task
-
-# Optional: OpenAI mode (costs ~$0.01-0.05)
-# export OPENAI_API_KEY=sk-proj-your-key-here
-# python baseline.py --mode openai --verbose
+python baseline.py --verbose                                # All 3 tasks
+python baseline.py --task clause_identification --verbose    # Single task
 ```
 
-### Baseline Scores (Rule-Based)
+### Results
 
 | Task | Difficulty | Score |
 |------|-----------|-------|
-| Clause Identification | Easy | 0.57 / 1.0 |
-| Risk Flagging | Medium | 0.60 / 1.0 |
-| Contract Comparison | Hard | 0.46 / 1.0 |
+| Clause Identification | Easy | 0.57 |
+| Risk Flagging | Medium | 0.60 |
+| Contract Comparison | Hard | 0.46 |
 
----
-
-## Deployment (HF Spaces)
-
-```bash
-pip install huggingface_hub
-huggingface-cli login
-openenv push --repo-id yourusername/contract-clause-env
-```
+These scores leave significant room for improvement — a well-designed RL agent should be able to beat the baseline substantially.
 
 ---
 
@@ -160,28 +141,33 @@ openenv push --repo-id yourusername/contract-clause-env
 
 ```
 contract_clause_env/
-├── models.py                 # Pydantic v2 models
-├── openenv.yaml              # Environment manifest
-├── pyproject.toml             # Package config
-├── baseline.py               # Rule-based baseline (free, no API key)
-├── client.py                 # Async HTTP client
+├── models.py                  # Pydantic v2 data models
+├── baseline.py                # Rule-based baseline agent
+├── client.py                  # Async HTTP client
+├── openenv.yaml               # OpenEnv manifest
+├── pyproject.toml              # Package config
 ├── data/
-│   ├── __init__.py            # Data loader
-│   ├── contracts_easy.py      # 5 employment contracts
-│   ├── contracts_medium.py    # 5 vendor contracts
-│   └── contracts_hard.py      # 3 contract pairs
+│   ├── __init__.py             # Unified data loader
+│   ├── contracts_easy.py       # Employment contracts
+│   ├── contracts_medium.py     # Vendor contracts (with hidden risks)
+│   └── contracts_hard.py       # Contract pairs for comparison
 ├── graders/
-│   ├── __init__.py
-│   └── grader.py              # Deterministic scoring
-├── tasks/
-│   └── __init__.py
-└── server/
-    ├── __init__.py
-    ├── app.py                 # FastAPI server
-    ├── environment.py         # Core env logic
-    ├── requirements.txt
-    └── Dockerfile
+│   └── grader.py               # Deterministic scoring functions
+├── server/
+│   ├── app.py                  # FastAPI server
+│   ├── environment.py          # Core environment logic
+│   ├── requirements.txt
+│   └── Dockerfile
+└── tasks/
+    └── __init__.py
 ```
+
+## Tech Stack
+
+- **Server:** FastAPI + Uvicorn
+- **Models:** Pydantic v2
+- **Containerization:** Docker (HF Spaces compatible, port 7860)
+- **Protocol:** REST + WebSocket
 
 ---
 

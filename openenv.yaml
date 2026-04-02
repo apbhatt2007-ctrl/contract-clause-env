@@ -5,7 +5,7 @@ description: >
   assesses severity, compares contract versions, and produces analysis summaries.
 version: "1.0.0"
 inference_script: inference.py
-hf_space_url: "https://huggingface.co/spaces/OWNER/SPACE"
+hf_space_url: "https://huggingface.co/spaces/YOUR_NAME/YOUR_SPACE"
 author: "Hackathon Team"
 
 server:

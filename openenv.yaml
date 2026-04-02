@@ -3,9 +3,9 @@ description: >
   An OpenEnv reinforcement learning environment for legal contract analysis.
   The agent reviews contracts, identifies clause types, flags hidden risks,
   assesses severity, compares contract versions, and produces analysis summaries.
-version: "1.0.0"
+version: "1.1.0"
 inference_script: inference.py
-hf_space_url: "https://huggingface.co/spaces/YOUR_NAME/YOUR_SPACE"
+hf_space_url: "https://huggingface.co/spaces/apbhatt2007-ctrl/contract-clause-env"
 author: "Hackathon Team"
 
 server:
@@ -67,5 +67,5 @@ endpoints:
     description: Real-time WebSocket interface
 
 docker:
-  dockerfile: server/Dockerfile
+  dockerfile: Dockerfile
   port: 7860

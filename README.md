@@ -116,13 +116,13 @@ Fully deterministic — same actions always produce the same score. Each task ha
 
 ---
 
-## Baseline Agent
+## Rule-Based Agent
 
 The baseline uses rule-based keyword matching — no API keys or external services needed:
 
 ```bash
-python baseline.py --verbose                                # All 3 tasks
-python baseline.py --task clause_identification --verbose    # Single task
+python inference.py --mode rule --verbose                                # All 3 tasks
+python inference.py --mode rule --task clause_identification --verbose    # Single task
 ```
 
 ### Results
@@ -142,7 +142,7 @@ These scores leave significant room for improvement — a well-designed RL agent
 ```
 contract_clause_env/
 ├── models.py                  # Pydantic v2 data models
-├── baseline.py                # Rule-based baseline agent
+├── inference.py               # Main OpenEnv AI script and baseline agent
 ├── client.py                  # Async HTTP client
 ├── openenv.yaml               # OpenEnv manifest
 ├── pyproject.toml              # Package config

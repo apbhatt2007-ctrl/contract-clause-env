@@ -4,6 +4,8 @@ description: >
   The agent reviews contracts, identifies clause types, flags hidden risks,
   assesses severity, compares contract versions, and produces analysis summaries.
 version: "1.0.0"
+inference_script: inference.py
+hf_space_url: "https://huggingface.co/spaces/OWNER/SPACE"
 author: "Hackathon Team"
 
 server:
@@ -59,7 +61,7 @@ endpoints:
     description: Get deterministic grade for current episode
   - path: /baseline
     method: GET
-    description: Information about running the baseline script
+    description: Information about running the inference py script
   - path: /ws
     method: WebSocket
     description: Real-time WebSocket interface

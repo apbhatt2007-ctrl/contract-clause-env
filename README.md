@@ -20,6 +20,20 @@ Legal contract review is tedious, error-prone, and expensive. Junior lawyers spe
 
 ---
 
+## Live Demo
+
+The environment is deployed on Hugging Face Spaces:
+
+🔗 **[Contract Clause Env — Live Demo](https://huggingface.co/spaces/Atharva4/OpenEnvhackathon)**
+
+Test endpoints:
+```bash
+curl https://Atharva4-openenvhackathon.hf.space/health
+# {"status": "ok"}
+```
+
+---
+
 ## Getting Started
 
 ### Prerequisites
@@ -29,6 +43,7 @@ Legal contract review is tedious, error-prone, and expensive. Junior lawyers spe
 ### Installation & Run
 
 ```bash
+pip install -r requirements.txt
 pip install -r server/requirements.txt
 uvicorn server.app:app --host 0.0.0.0 --port 7860
 ```
@@ -42,7 +57,7 @@ curl http://localhost:7860/health
 ### Docker
 
 ```bash
-docker build -t contract-clause-env -f server/Dockerfile .
+docker build -t contract-clause-env .
 docker run -p 7860:7860 contract-clause-env
 ```
 

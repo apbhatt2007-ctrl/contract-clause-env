@@ -1,4 +1,4 @@
-﻿"""
+"""
 FastAPI server for the Contract Clause Analysis OpenEnv environment.
 
 Provides REST endpoints and WebSocket for agent interaction.
@@ -137,8 +137,8 @@ async def get_grade():
 async def run_baseline():
     """Trigger a simple baseline run (informational)."""
     return {
-        "message": "Use baseline.py for full baseline inference.",
-        "command": "python baseline.py --task clause_identification --verbose",
+        "message": "Use inference.py for full baseline inference.",
+        "command": "python inference.py --task clause_identification --mode rule --verbose",
     }
 
 

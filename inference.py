@@ -1,4 +1,4 @@
-﻿"""
+"""
 Inference script for the Contract Clause Analysis OpenEnv environment.
 
 Team: antigravity
@@ -22,20 +22,16 @@ import time
 import traceback
 
 import httpx
-from dotenv import load_dotenv
 from openai import OpenAI
 
-load_dotenv()
-
-# â”€â”€â”€ Environment variables (MANDATORY) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─── Environment variables (MANDATORY) ────────────────────────────
 # Must read: API_BASE_URL, MODEL_NAME, HF_TOKEN
-# Must NOT use: OPENAI_API_KEY or OPENAI_MODEL
-API_BASE_URL = os.environ.get("API_BASE_URL", "https://api.openai.com/v1")
-MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
+API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:7860")
+MODEL_NAME = os.environ.get("MODEL_NAME", "meta-llama/Meta-Llama-3.1-8B-Instruct")
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
 
-# OpenEnv server runs at localhost:7860
-ENV_SERVER_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
+# OpenEnv server URL — same as API_BASE_URL for the environment server
+ENV_SERVER_URL = os.environ.get("API_BASE_URL", "http://localhost:7860")
 
 TASK_IDS = ["clause_identification", "risk_flagging", "contract_comparison"]
 
@@ -46,10 +42,10 @@ DEFAULT_MAX_STEPS = {
     "contract_comparison": 55,
 }
 
-# HTTP timeout for all client.post() / client.get() calls (BUG 4)
+# HTTP timeout for all client.post() / client.get() calls
 REQUEST_TIMEOUT = 30
 
-# â”€â”€â”€ Keyword dictionaries for rule-based fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─── Keyword dictionaries for rule-based fallback ─────────────────
 
 CLAUSE_KEYWORDS = {
     "position":          ["position", "duties", "role", "responsibilities",
@@ -118,15 +114,15 @@ SEVERITY_KEYWORDS = {
 }
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# Structured stdout logging â€” EXACT format required by validator
+# ═══════════════════════════════════════════════════════════════════
+# Structured stdout logging — EXACT format required by evaluator
 #
-#   [START] {"task_id": "...", "task_name": "..."}
-#   [STEP]  {"step": 1, "action": {...}, "reward": 0.0, "obs": {...}}
-#   [END]   {"task_id": "...", "score": 0.0, "steps": 0}
+#   print(json.dumps({"type": "[START]", "task_id": "<id>", "model": MODEL_NAME}))
+#   print(json.dumps({"type": "[STEP]",  "task_id": "<id>", "step": N, "action": {...}, "reward": R, "done": D}))
+#   print(json.dumps({"type": "[END]",   "task_id": "<id>", "score": S}))
 #
-# All payloads must be valid JSON on a single line after the tag.
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# All payloads must be valid JSON on a single line.
+# ═══════════════════════════════════════════════════════════════════
 
 TASK_NAMES = {
     "clause_identification": "Clause Identification",
@@ -135,38 +131,36 @@ TASK_NAMES = {
 }
 
 
-def log_start(task_id: str, task_name: str) -> None:
-    payload = json.dumps({"task_id": task_id, "task_name": task_name}, separators=(",", ":"))
-    print(f"[START] {payload}", flush=True)
+def log_start(task_id: str) -> None:
+    print(json.dumps({
+        "type": "[START]",
+        "task_id": task_id,
+        "model": MODEL_NAME,
+    }), flush=True)
 
 
-def log_step(step: int, action: dict, reward: float, obs: dict, reasoning: str = "") -> None:
-    obs_summary = {
-        "section_index": obs.get("current_section_index", -1),
-        "section_heading": obs.get("current_section_heading", ""),
-        "done": obs.get("done", False),
-        "reward": obs.get("reward", reward),
-        "progress": obs.get("progress", 0.0),
-        "system_feedback": (obs.get("system_feedback", "") or "")[:120],
-    }
-    payload = json.dumps({
+def log_step(task_id: str, step: int, action: dict, reward: float, done: bool) -> None:
+    print(json.dumps({
+        "type": "[STEP]",
+        "task_id": task_id,
         "step": step,
         "action": action,
         "reward": reward,
-        "obs": obs_summary,
-        "reasoning": reasoning,
-    }, separators=(",", ":"))
-    print(f"[STEP] {payload}", flush=True)
+        "done": done,
+    }), flush=True)
 
 
-def log_end(task_id: str, score: float, steps: int) -> None:
-    payload = json.dumps({"task_id": task_id, "score": score, "steps": steps}, separators=(",", ":"))
-    print(f"[END] {payload}", flush=True)
+def log_end(task_id: str, score: float) -> None:
+    print(json.dumps({
+        "type": "[END]",
+        "task_id": task_id,
+        "score": score,
+    }), flush=True)
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════════════════════
 # Rule-based helpers (fallback when no LLM available)
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════════════════════
 
 def rule_classify_clause(text: str) -> str:
     if not text.strip():
@@ -239,9 +233,9 @@ def split_comparison_section(section_text: str) -> tuple[str, str, bool]:
     return section_text, "", False
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# OpenAI SDK LLM helper â€” uses from openai import OpenAI
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════════════════════
+# OpenAI SDK LLM helper — uses from openai import OpenAI
+# ═══════════════════════════════════════════════════════════════════
 
 def call_llm(messages: list[dict], retries: int = 3) -> str:
     """Call the LLM using the OpenAI SDK. Uses API_BASE_URL and HF_TOKEN."""
@@ -255,12 +249,12 @@ def call_llm(messages: list[dict], retries: int = 3) -> str:
                 model=MODEL_NAME,
                 messages=messages,
                 temperature=0.1,
-                max_tokens=1024,
+                max_tokens=512,
             )
             content = response.choices[0].message.content
             return content or "{}"
         except Exception as exc:
-            print(f"  [LLM Attempt {attempt}/{retries}] Error: {exc}", flush=True)
+            print(f"  [LLM Attempt {attempt}/{retries}] Error: {exc}", file=sys.stderr, flush=True)
             if attempt < retries:
                 time.sleep(2 ** attempt)
     return "{}"
@@ -291,23 +285,9 @@ def parse_action(raw: str) -> dict | None:
     return None
 
 
-def extract_reasoning(raw: str) -> str:
-    """Extract chain-of-thought reasoning from LLM output."""
-    # If the LLM output contains text before JSON, that's the reasoning
-    raw = raw.strip()
-    json_start = raw.find("{")
-    if json_start > 0:
-        reasoning = raw[:json_start].strip()
-        # Clean markdown fences
-        reasoning = reasoning.replace("```json", "").replace("```", "").strip()
-        if reasoning:
-            return reasoning[:300]
-    return ""
-
-
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-# Safe HTTP call wrapper (BUG 4 â€” timeout protection)
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════════════════════
+# Safe HTTP call wrapper (timeout protection)
+# ═══════════════════════════════════════════════════════════════════
 
 def safe_post(client: httpx.Client, url: str, json_data: dict) -> httpx.Response:
     """Wrap client.post() with 30-second timeout and error handling."""
@@ -319,60 +299,58 @@ def safe_get(client: httpx.Client, url: str) -> httpx.Response:
     return client.get(url, timeout=REQUEST_TIMEOUT)
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════════════════════
 # Task runner: Rule-based mode (FREE, no API key needed)
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════════════════════
 
 def run_task_rule_based(task_id: str, episode: int = 0,
                         verbose: bool = False) -> dict:
     task_name = TASK_NAMES.get(task_id, task_id)
     if verbose:
-        print(f"\n{'=' * 55}")
-        print(f"  Task: {task_id} (rule-based â€” FREE)")
-        print(f"{'=' * 55}")
+        print(f"\n{'=' * 55}", file=sys.stderr)
+        print(f"  Task: {task_id} (rule-based — FREE)", file=sys.stderr)
+        print(f"{'=' * 55}", file=sys.stderr)
 
     try:
         with httpx.Client(timeout=REQUEST_TIMEOUT, base_url=ENV_SERVER_URL) as client:
-            # â”€â”€ Reset â”€â”€
+            # ── Reset ──
             resp = safe_post(client, "/reset", {"task_id": task_id, "contract_index": 0})
             resp.raise_for_status()
             obs = resp.json()
 
-            # BUG 2 â€” max_steps: read safely from obs
             max_steps = obs.get("max_steps") or obs.get("total_steps") or DEFAULT_MAX_STEPS.get(task_id, 50)
             steps = 0
 
             # Log [START] after /reset succeeds
-            log_start(task_id, task_name)
+            log_start(task_id)
 
             prev_section_idx = -1
-            same_section_count = 0  # BUG 1 â€” loop guard
+            same_section_count = 0
 
             while not obs.get("done", False) and steps < max_steps:
                 section_text = obs.get("current_section_text", "")
                 section_idx = obs.get("current_section_index", 0)
 
-                # BUG 1 â€” only submit after TWO consecutive identical indices
                 same_section_count = same_section_count + 1 if section_idx == prev_section_idx else 0
                 prev_section_idx = section_idx
 
                 if same_section_count >= 2:
                     if verbose:
-                        print("  Stuck on same section (2 consecutive). Submitting...")
+                        print("  Stuck on same section (2 consecutive). Submitting...", file=sys.stderr)
                     submit_action = {"action_type": "submit"}
                     resp = safe_post(client, "/step", submit_action)
                     resp.raise_for_status()
                     result = resp.json()
                     obs = result.get("observation", obs)
                     reward = result.get("reward", 0.0)
+                    done = obs.get("done", True)
                     steps += 1
-                    log_step(steps, submit_action, reward, obs, reasoning="Loop guard triggered after 2 consecutive identical sections")
+                    log_step(task_id, steps, submit_action, reward, done)
                     break
 
-                # â”€â”€ Clause Identification â”€â”€
+                # ── Clause Identification ──
                 if task_id == "clause_identification":
                     clause_type = rule_classify_clause(section_text)
-                    reasoning = f"Rule-matched clause type '{clause_type}' for section {section_idx}"
                     action = {
                         "action_type": "identify_clause",
                         "clause_index": section_idx,
@@ -380,18 +358,16 @@ def run_task_rule_based(task_id: str, episode: int = 0,
                         "confidence": 0.8,
                     }
                     if verbose:
-                        print(f"  Step {steps + 1}: identify section {section_idx} -> '{clause_type}'")
+                        print(f"  Step {steps + 1}: identify section {section_idx} -> '{clause_type}'", file=sys.stderr)
 
                     resp = safe_post(client, "/step", action)
                     resp.raise_for_status()
                     result = resp.json()
                     obs = result.get("observation", obs)
                     reward = result.get("reward", 0.0)
+                    done = obs.get("done", False)
                     steps += 1
-                    log_step(steps, action, reward, obs, reasoning=reasoning)
-
-                    if verbose:
-                        print(f"    reward={reward:.3f} {obs.get('system_feedback', '')[:60]}")
+                    log_step(task_id, steps, action, reward, done)
 
                     if not obs.get("done", False):
                         ns_action = {"action_type": "next_section"}
@@ -400,14 +376,14 @@ def run_task_rule_based(task_id: str, episode: int = 0,
                         result = resp.json()
                         obs = result.get("observation", obs)
                         reward = result.get("reward", 0.0)
+                        done = obs.get("done", False)
                         steps += 1
-                        log_step(steps, ns_action, reward, obs, reasoning="Advancing to next section")
+                        log_step(task_id, steps, ns_action, reward, done)
 
-                # â”€â”€ Risk Flagging â”€â”€
+                # ── Risk Flagging ──
                 elif task_id == "risk_flagging":
                     has_risk, risk_type, severity = rule_detect_risk(section_text)
                     if has_risk:
-                        reasoning = f"Rule-detected risk '{risk_type}' (severity={severity}) in section {section_idx}"
                         action = {
                             "action_type": "flag_risk",
                             "clause_index": section_idx,
@@ -415,18 +391,16 @@ def run_task_rule_based(task_id: str, episode: int = 0,
                             "confidence": 0.8,
                         }
                         if verbose:
-                            print(f"  Step {steps + 1}: RISK at section {section_idx} -> '{risk_type}'")
+                            print(f"  Step {steps + 1}: RISK at section {section_idx} -> '{risk_type}'", file=sys.stderr)
 
                         resp = safe_post(client, "/step", action)
                         resp.raise_for_status()
                         result = resp.json()
                         obs = result.get("observation", obs)
                         reward = result.get("reward", 0.0)
+                        done = obs.get("done", False)
                         steps += 1
-                        log_step(steps, action, reward, obs, reasoning=reasoning)
-
-                        if verbose:
-                            print(f"    reward={reward:.3f}")
+                        log_step(task_id, steps, action, reward, done)
 
                         if not obs.get("done", False):
                             sev_action = {
@@ -440,15 +414,9 @@ def run_task_rule_based(task_id: str, episode: int = 0,
                             result = resp.json()
                             obs = result.get("observation", obs)
                             reward = result.get("reward", 0.0)
+                            done = obs.get("done", False)
                             steps += 1
-                            log_step(steps, sev_action, reward, obs,
-                                     reasoning=f"Assessed severity as '{severity}'")
-                            if verbose:
-                                print(f"    severity={severity} reward={reward:.3f}")
-                    else:
-                        reasoning = f"No risk detected in section {section_idx}"
-                        if verbose:
-                            print(f"  Step {steps + 1}: section {section_idx} -> no risk")
+                            log_step(task_id, steps, sev_action, reward, done)
 
                     if not obs.get("done", False):
                         ns_action = {"action_type": "next_section"}
@@ -457,10 +425,11 @@ def run_task_rule_based(task_id: str, episode: int = 0,
                         result = resp.json()
                         obs = result.get("observation", obs)
                         reward = result.get("reward", 0.0)
+                        done = obs.get("done", False)
                         steps += 1
-                        log_step(steps, ns_action, reward, obs, reasoning="Advancing to next section")
+                        log_step(task_id, steps, ns_action, reward, done)
 
-                # â”€â”€ Contract Comparison â”€â”€
+                # ── Contract Comparison ──
                 elif task_id == "contract_comparison":
                     orig_part, rev_part, found_split = split_comparison_section(section_text)
                     if found_split:
@@ -469,7 +438,6 @@ def run_task_rule_based(task_id: str, episode: int = 0,
                         has_change, impact = False, "neutral"
 
                     if has_change:
-                        reasoning = f"Rule-detected change (impact={impact}) in section {section_idx}"
                         action = {
                             "action_type": "detect_change",
                             "clause_index": section_idx,
@@ -477,18 +445,16 @@ def run_task_rule_based(task_id: str, episode: int = 0,
                             "confidence": 0.7,
                         }
                         if verbose:
-                            print(f"  Step {steps + 1}: CHANGE at section {section_idx} -> '{impact}'")
+                            print(f"  Step {steps + 1}: CHANGE at section {section_idx} -> '{impact}'", file=sys.stderr)
 
                         resp = safe_post(client, "/step", action)
                         resp.raise_for_status()
                         result = resp.json()
                         obs = result.get("observation", obs)
                         reward = result.get("reward", 0.0)
+                        done = obs.get("done", False)
                         steps += 1
-                        log_step(steps, action, reward, obs, reasoning=reasoning)
-
-                        if verbose:
-                            print(f"    reward={reward:.3f}")
+                        log_step(task_id, steps, action, reward, done)
 
                         if not obs.get("done", False):
                             impact_action = {
@@ -502,15 +468,9 @@ def run_task_rule_based(task_id: str, episode: int = 0,
                             result = resp.json()
                             obs = result.get("observation", obs)
                             reward = result.get("reward", 0.0)
+                            done = obs.get("done", False)
                             steps += 1
-                            log_step(steps, impact_action, reward, obs,
-                                     reasoning=f"Assessed impact as '{impact}'")
-                            if verbose:
-                                print(f"    impact={impact} reward={reward:.3f}")
-                    else:
-                        reasoning = f"No change detected in section {section_idx}"
-                        if verbose:
-                            print(f"  Step {steps + 1}: section {section_idx} -> no change")
+                            log_step(task_id, steps, impact_action, reward, done)
 
                     if not obs.get("done", False):
                         ns_action = {"action_type": "next_section"}
@@ -519,10 +479,11 @@ def run_task_rule_based(task_id: str, episode: int = 0,
                         result = resp.json()
                         obs = result.get("observation", obs)
                         reward = result.get("reward", 0.0)
+                        done = obs.get("done", False)
                         steps += 1
-                        log_step(steps, ns_action, reward, obs, reasoning="Advancing to next section")
+                        log_step(task_id, steps, ns_action, reward, done)
 
-            # â”€â”€ Final submit if not already done â”€â”€
+            # ── Final submit if not already done ──
             if not obs.get("done", False):
                 submit_action = {"action_type": "submit"}
                 resp = safe_post(client, "/step", submit_action)
@@ -530,42 +491,42 @@ def run_task_rule_based(task_id: str, episode: int = 0,
                 result = resp.json()
                 obs = result.get("observation", obs)
                 reward = result.get("reward", 0.0)
+                done = obs.get("done", True)
                 steps += 1
-                log_step(steps, submit_action, reward, obs, reasoning="Final submission")
+                log_step(task_id, steps, submit_action, reward, done)
 
-            # â”€â”€ Get grade â”€â”€
+            # ── Get grade ──
             resp = safe_get(client, "/grader")
             resp.raise_for_status()
             grade = resp.json()
 
         score = grade.get("score", 0.0)
-        log_end(task_id, score, steps)
+        log_end(task_id, score)
 
         return {"task_id": task_id, "score": score, "steps": steps, "max_steps": max_steps}
 
     except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.TimeoutException) as exc:
-        # BUG 4 â€” On ConnectError, print a clear message and log [END] with score=0.0
-        print(f"\nCONNECTION ERROR for {task_id}: {exc}", flush=True)
-        log_end(task_id, score=0.0, steps=0)
+        print(f"\nCONNECTION ERROR for {task_id}: {exc}", file=sys.stderr, flush=True)
+        log_end(task_id, score=0.0)
         return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
     except Exception as exc:
-        print(f"\nUNEXPECTED ERROR for {task_id}: {exc}", flush=True)
-        traceback.print_exc()
-        log_end(task_id, score=0.0, steps=0)
+        print(f"\nUNEXPECTED ERROR for {task_id}: {exc}", file=sys.stderr, flush=True)
+        traceback.print_exc(file=sys.stderr)
+        log_end(task_id, score=0.0)
         return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════════════════════
 # Task runner: OpenAI LLM mode
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════════════════════
 
 def run_task_openai(task_id: str, episode: int = 0,
                     verbose: bool = False) -> dict:
     task_name = TASK_NAMES.get(task_id, task_id)
     if verbose:
-        print(f"\n{'=' * 55}")
-        print(f"  Task: {task_id} (OpenAI â€” {MODEL_NAME})")
-        print(f"{'=' * 55}")
+        print(f"\n{'=' * 55}", file=sys.stderr)
+        print(f"  Task: {task_id} (OpenAI — {MODEL_NAME})", file=sys.stderr)
+        print(f"{'=' * 55}", file=sys.stderr)
 
     try:
         prompts = {
@@ -606,40 +567,38 @@ def run_task_openai(task_id: str, episode: int = 0,
         }
 
         with httpx.Client(timeout=REQUEST_TIMEOUT, base_url=ENV_SERVER_URL) as client:
-            # â”€â”€ Reset â”€â”€
+            # ── Reset ──
             resp = safe_post(client, "/reset", {"task_id": task_id, "contract_index": 0})
             resp.raise_for_status()
             obs = resp.json()
             system_prompt = prompts.get(task_id, "You are a legal analyst.")
 
-            # BUG 2 â€” max_steps: read safely from obs
             max_steps = obs.get("max_steps") or obs.get("total_steps") or DEFAULT_MAX_STEPS.get(task_id, 50)
             steps = 0
 
             # Log [START] after /reset succeeds
-            log_start(task_id, task_name)
+            log_start(task_id)
 
             prev_section_idx = -1
-            same_section_count = 0  # BUG 1 â€” loop guard
+            same_section_count = 0
 
             while not obs.get("done", False) and steps < max_steps:
                 section_idx = obs.get("current_section_index", 0)
 
-                # BUG 1 â€” only submit after TWO consecutive identical indices
                 same_section_count = same_section_count + 1 if section_idx == prev_section_idx else 0
                 prev_section_idx = section_idx
 
                 if same_section_count >= 2:
                     if verbose:
-                        print("  Stuck on same section (2 consecutive). Submitting...")
+                        print("  Stuck on same section (2 consecutive). Submitting...", file=sys.stderr)
                     submit_action = {"action_type": "submit"}
                     resp = safe_post(client, "/step", submit_action)
                     resp.raise_for_status()
                     result = resp.json()
                     obs = result.get("observation", obs)
+                    done = obs.get("done", True)
                     steps += 1
-                    log_step(steps, submit_action, 0.0, obs,
-                             reasoning="Loop guard triggered after 2 consecutive identical sections")
+                    log_step(task_id, steps, submit_action, 0.0, done)
                     break
 
                 # Build user message from observation
@@ -656,22 +615,19 @@ def run_task_openai(task_id: str, episode: int = 0,
 
                 # Call LLM
                 llm_output = call_llm(messages)
-                reasoning = extract_reasoning(llm_output)
                 action_dict = parse_action(llm_output)
 
                 # Fallback if LLM parse fails
                 if action_dict is None:
                     if verbose:
-                        print(f"  LLM parse failed, falling back to next_section")
-                    reasoning = f"LLM parse failed (raw: {llm_output[:100]}), using fallback"
+                        print(f"  LLM parse failed, falling back to next_section", file=sys.stderr)
                     action_dict = {"action_type": "next_section"}
                 elif "action_type" not in action_dict:
-                    reasoning = f"LLM missing action_type key, using fallback"
                     action_dict = {"action_type": "next_section"}
 
                 if verbose:
                     atype = action_dict.get("action_type", "?")
-                    print(f"  Step {steps + 1}: {atype} -> idx={action_dict.get('clause_index', '-')}")
+                    print(f"  Step {steps + 1}: {atype} -> idx={action_dict.get('clause_index', '-')}", file=sys.stderr)
 
                 # Execute action
                 resp = safe_post(client, "/step", action_dict)
@@ -679,11 +635,12 @@ def run_task_openai(task_id: str, episode: int = 0,
                 result = resp.json()
                 obs = result.get("observation", obs)
                 reward = result.get("reward", 0.0)
+                done = obs.get("done", False)
                 steps += 1
-                log_step(steps, action_dict, reward, obs, reasoning=reasoning)
+                log_step(task_id, steps, action_dict, reward, done)
 
                 if verbose:
-                    print(f"    reward={reward:.3f} {obs.get('system_feedback', '')[:60]}")
+                    print(f"    reward={reward:.3f} {obs.get('system_feedback', '')[:60]}", file=sys.stderr)
 
                 # Auto-advance after main actions
                 main_actions = {"identify_clause", "flag_risk", "detect_change"}
@@ -694,14 +651,14 @@ def run_task_openai(task_id: str, episode: int = 0,
                     result = resp.json()
                     obs = result.get("observation", obs)
                     reward = result.get("reward", 0.0)
+                    done = obs.get("done", False)
                     steps += 1
-                    log_step(steps, ns_action, reward, obs, reasoning="Advancing to next section after analysis")
+                    log_step(task_id, steps, ns_action, reward, done)
 
                 # For risk_flagging: also assess severity after flag_risk
                 if (task_id == "risk_flagging"
                         and action_dict.get("action_type") == "flag_risk"
                         and not obs.get("done", False)):
-                    # Use rule-based severity as supplemental step
                     section_text_for_sev = obs.get("current_section_text", section_text)
                     _, _, severity = rule_detect_risk(section_text_for_sev)
                     if not severity:
@@ -717,9 +674,9 @@ def run_task_openai(task_id: str, episode: int = 0,
                     result = resp.json()
                     obs = result.get("observation", obs)
                     reward = result.get("reward", 0.0)
+                    done = obs.get("done", False)
                     steps += 1
-                    log_step(steps, sev_action, reward, obs,
-                             reasoning=f"Assessed risk severity as '{severity}'")
+                    log_step(task_id, steps, sev_action, reward, done)
 
                 # For contract_comparison: also assess impact after detect_change
                 if (task_id == "contract_comparison"
@@ -737,11 +694,11 @@ def run_task_openai(task_id: str, episode: int = 0,
                     result = resp.json()
                     obs = result.get("observation", obs)
                     reward = result.get("reward", 0.0)
+                    done = obs.get("done", False)
                     steps += 1
-                    log_step(steps, impact_action, reward, obs,
-                             reasoning=f"Assessed change impact as '{impact}'")
+                    log_step(task_id, steps, impact_action, reward, done)
 
-            # â”€â”€ Final submit if not already done â”€â”€
+            # ── Final submit if not already done ──
             if not obs.get("done", False):
                 submit_action = {"action_type": "submit"}
                 resp = safe_post(client, "/step", submit_action)
@@ -749,34 +706,34 @@ def run_task_openai(task_id: str, episode: int = 0,
                 result = resp.json()
                 obs = result.get("observation", obs)
                 reward = result.get("reward", 0.0)
+                done = obs.get("done", True)
                 steps += 1
-                log_step(steps, submit_action, reward, obs, reasoning="Final submission")
+                log_step(task_id, steps, submit_action, reward, done)
 
-            # â”€â”€ Get grade â”€â”€
+            # ── Get grade ──
             resp = safe_get(client, "/grader")
             resp.raise_for_status()
             grade = resp.json()
 
         score = grade.get("score", 0.0)
-        log_end(task_id, score, steps)
+        log_end(task_id, score)
 
         return {"task_id": task_id, "score": score, "steps": steps, "max_steps": max_steps}
 
     except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.TimeoutException) as exc:
-        # BUG 4 â€” On ConnectError, print a clear message and log [END] with score=0.0
-        print(f"\nCONNECTION ERROR for {task_id}: {exc}", flush=True)
-        log_end(task_id, score=0.0, steps=0)
+        print(f"\nCONNECTION ERROR for {task_id}: {exc}", file=sys.stderr, flush=True)
+        log_end(task_id, score=0.0)
         return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
     except Exception as exc:
-        print(f"\nUNEXPECTED ERROR for {task_id}: {exc}", flush=True)
-        traceback.print_exc()
-        log_end(task_id, score=0.0, steps=0)
+        print(f"\nUNEXPECTED ERROR for {task_id}: {exc}", file=sys.stderr, flush=True)
+        traceback.print_exc(file=sys.stderr)
+        log_end(task_id, score=0.0)
         return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
 
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════════════════════
 # Main
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ═══════════════════════════════════════════════════════════════════
 
 def main():
     parser = argparse.ArgumentParser(
@@ -790,7 +747,7 @@ def main():
     parser.add_argument("--episode", type=int, default=0)
     args = parser.parse_args()
 
-    # BUG 3 â€” HF_TOKEN validation at startup
+    # HF_TOKEN validation at startup for openai mode
     if args.mode == "openai":
         if not os.environ.get("HF_TOKEN"):
             raise SystemExit("ERROR: HF_TOKEN is not set. Exiting.")
@@ -802,9 +759,9 @@ def main():
     tasks = [args.task] if args.task else TASK_IDS
 
     if args.mode == "rule":
-        print(f"\n  Mode: Rule-Based (FREE)", flush=True)
+        print(f"  Mode: Rule-Based (FREE)", file=sys.stderr, flush=True)
     else:
-        print(f"\n  Mode: OpenAI ({MODEL_NAME})", flush=True)
+        print(f"  Mode: OpenAI ({MODEL_NAME})", file=sys.stderr, flush=True)
 
     results = []
     for tid in tasks:
@@ -815,35 +772,33 @@ def main():
                 result = run_task_openai(tid, args.episode, args.verbose)
             results.append(result)
         except Exception as exc:
-            print(f"\nERROR running {tid}: {exc}", flush=True)
-            log_end(tid, score=0.0, steps=0)
+            print(f"\nERROR running {tid}: {exc}", file=sys.stderr, flush=True)
+            log_end(tid, score=0.0)
             results.append({
                 "task_id": tid, "score": 0.0,
                 "steps": 0, "max_steps": 0, "error": str(exc),
             })
 
-    # â”€â”€ Summary â”€â”€
+    # ── Summary (to stderr so it doesn't pollute evaluator stdout) ──
     diff_map = {
         "clause_identification": "EASY",
         "risk_flagging": "MEDIUM",
         "contract_comparison": "HARD",
     }
-    print(f"\n{'=' * 55}", flush=True)
-    print("  Contract Clause Env â€” Inference Results", flush=True)
-    print(f"{'=' * 55}", flush=True)
+    print(f"\n{'=' * 55}", file=sys.stderr, flush=True)
+    print("  Contract Clause Env — Inference Results", file=sys.stderr, flush=True)
+    print(f"{'=' * 55}", file=sys.stderr, flush=True)
     for r in results:
         diff = diff_map.get(r["task_id"], "?")
         if r.get("error"):
-            print(f"  Task: {r['task_id']} ({diff})")
-            print(f"    ERROR: {r['error']}")
+            print(f"  Task: {r['task_id']} ({diff})", file=sys.stderr)
+            print(f"    ERROR: {r['error']}", file=sys.stderr)
         else:
-            print(f"  Task: {r['task_id']} ({diff})")
-            print(f"    Score: {r['score']:.2f} / 1.0")
-            print(f"    Steps: {r['steps']} / {r['max_steps']}")
-    print(f"{'=' * 55}\n", flush=True)
+            print(f"  Task: {r['task_id']} ({diff})", file=sys.stderr)
+            print(f"    Score: {r['score']:.2f} / 1.0", file=sys.stderr)
+            print(f"    Steps: {r['steps']} / {r['max_steps']}", file=sys.stderr)
+    print(f"{'=' * 55}\n", file=sys.stderr, flush=True)
 
 
 if __name__ == "__main__":
     main()
-
-

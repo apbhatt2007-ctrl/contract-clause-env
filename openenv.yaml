@@ -7,7 +7,7 @@ version: "1.0.0"
 author: "Hackathon Team"
 
 inference_script: inference.py
-hf_space_url: "https://huggingface.co/spaces/Atharva4/antigravity-openenv"
+hf_space_url: "https://huggingface.co/spaces/Atharva4/OpenEnvhackathon"
 
 server:
   entrypoint: server/app.py

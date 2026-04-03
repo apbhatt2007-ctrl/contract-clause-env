@@ -1,4 +1,4 @@
-"""
+﻿"""
 Inference script for the Contract Clause Analysis OpenEnv environment.
 
 Team: antigravity
@@ -27,10 +27,10 @@ from openai import OpenAI
 
 load_dotenv()
 
-# ─── Environment variables (MANDATORY) ────────────────────────────
+# â”€â”€â”€ Environment variables (MANDATORY) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Must read: API_BASE_URL, MODEL_NAME, HF_TOKEN
-# Must NOT use: OPENAI_API_KEY or OPENAI_MODEL
-API_BASE_URL = os.environ.get("API_BASE_URL", "https://api.openai.com/v1")
+# Must NOT use: HF_TOKEN or MODEL_NAME
+API_BASE_URL = os.environ.get("API_BASE_URL", "$env:API_BASE_URL")
 MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
 
@@ -49,7 +49,7 @@ DEFAULT_MAX_STEPS = {
 # HTTP timeout for all client.post() / client.get() calls (BUG 4)
 REQUEST_TIMEOUT = 30
 
-# ─── Keyword dictionaries for rule-based fallback ─────────────────
+# â”€â”€â”€ Keyword dictionaries for rule-based fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 CLAUSE_KEYWORDS = {
     "position":          ["position", "duties", "role", "responsibilities",
@@ -118,15 +118,15 @@ SEVERITY_KEYWORDS = {
 }
 
 
-# ═══════════════════════════════════════════════════════════════════
-# Structured stdout logging — EXACT format required by validator
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# Structured stdout logging â€” EXACT format required by validator
 #
 #   [START] {"task_id": "...", "task_name": "..."}
 #   [STEP]  {"step": 1, "action": {...}, "reward": 0.0, "obs": {...}}
 #   [END]   {"task_id": "...", "score": 0.0, "steps": 0}
 #
 # All payloads must be valid JSON on a single line after the tag.
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 TASK_NAMES = {
     "clause_identification": "Clause Identification",
@@ -164,9 +164,9 @@ def log_end(task_id: str, score: float, steps: int) -> None:
     print(f"[END] {payload}", flush=True)
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # Rule-based helpers (fallback when no LLM available)
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 def rule_classify_clause(text: str) -> str:
     if not text.strip():
@@ -239,9 +239,9 @@ def split_comparison_section(section_text: str) -> tuple[str, str, bool]:
     return section_text, "", False
 
 
-# ═══════════════════════════════════════════════════════════════════
-# OpenAI SDK LLM helper — uses from openai import OpenAI
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# OpenAI SDK LLM helper â€” uses from openai import OpenAI
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 def call_llm(messages: list[dict], retries: int = 3) -> str:
     """Call the LLM using the OpenAI SDK. Uses API_BASE_URL and HF_TOKEN."""
@@ -305,9 +305,9 @@ def extract_reasoning(raw: str) -> str:
     return ""
 
 
-# ═══════════════════════════════════════════════════════════════════
-# Safe HTTP call wrapper (BUG 4 — timeout protection)
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# Safe HTTP call wrapper (BUG 4 â€” timeout protection)
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 def safe_post(client: httpx.Client, url: str, json_data: dict) -> httpx.Response:
     """Wrap client.post() with 30-second timeout and error handling."""
@@ -319,26 +319,26 @@ def safe_get(client: httpx.Client, url: str) -> httpx.Response:
     return client.get(url, timeout=REQUEST_TIMEOUT)
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # Task runner: Rule-based mode (FREE, no API key needed)
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 def run_task_rule_based(task_id: str, episode: int = 0,
                         verbose: bool = False) -> dict:
     task_name = TASK_NAMES.get(task_id, task_id)
     if verbose:
         print(f"\n{'=' * 55}")
-        print(f"  Task: {task_id} (rule-based — FREE)")
+        print(f"  Task: {task_id} (rule-based â€” FREE)")
         print(f"{'=' * 55}")
 
     try:
         with httpx.Client(timeout=REQUEST_TIMEOUT, base_url=ENV_SERVER_URL) as client:
-            # ── Reset ──
+            # â”€â”€ Reset â”€â”€
             resp = safe_post(client, "/reset", {"task_id": task_id, "contract_index": 0})
             resp.raise_for_status()
             obs = resp.json()
 
-            # BUG 2 — max_steps: read safely from obs
+            # BUG 2 â€” max_steps: read safely from obs
             max_steps = obs.get("max_steps") or obs.get("total_steps") or DEFAULT_MAX_STEPS.get(task_id, 50)
             steps = 0
 
@@ -346,13 +346,13 @@ def run_task_rule_based(task_id: str, episode: int = 0,
             log_start(task_id, task_name)
 
             prev_section_idx = -1
-            same_section_count = 0  # BUG 1 — loop guard
+            same_section_count = 0  # BUG 1 â€” loop guard
 
             while not obs.get("done", False) and steps < max_steps:
                 section_text = obs.get("current_section_text", "")
                 section_idx = obs.get("current_section_index", 0)
 
-                # BUG 1 — only submit after TWO consecutive identical indices
+                # BUG 1 â€” only submit after TWO consecutive identical indices
                 same_section_count = same_section_count + 1 if section_idx == prev_section_idx else 0
                 prev_section_idx = section_idx
 
@@ -369,7 +369,7 @@ def run_task_rule_based(task_id: str, episode: int = 0,
                     log_step(steps, submit_action, reward, obs, reasoning="Loop guard triggered after 2 consecutive identical sections")
                     break
 
-                # ── Clause Identification ──
+                # â”€â”€ Clause Identification â”€â”€
                 if task_id == "clause_identification":
                     clause_type = rule_classify_clause(section_text)
                     reasoning = f"Rule-matched clause type '{clause_type}' for section {section_idx}"
@@ -403,7 +403,7 @@ def run_task_rule_based(task_id: str, episode: int = 0,
                         steps += 1
                         log_step(steps, ns_action, reward, obs, reasoning="Advancing to next section")
 
-                # ── Risk Flagging ──
+                # â”€â”€ Risk Flagging â”€â”€
                 elif task_id == "risk_flagging":
                     has_risk, risk_type, severity = rule_detect_risk(section_text)
                     if has_risk:
@@ -460,7 +460,7 @@ def run_task_rule_based(task_id: str, episode: int = 0,
                         steps += 1
                         log_step(steps, ns_action, reward, obs, reasoning="Advancing to next section")
 
-                # ── Contract Comparison ──
+                # â”€â”€ Contract Comparison â”€â”€
                 elif task_id == "contract_comparison":
                     orig_part, rev_part, found_split = split_comparison_section(section_text)
                     if found_split:
@@ -522,7 +522,7 @@ def run_task_rule_based(task_id: str, episode: int = 0,
                         steps += 1
                         log_step(steps, ns_action, reward, obs, reasoning="Advancing to next section")
 
-            # ── Final submit if not already done ──
+            # â”€â”€ Final submit if not already done â”€â”€
             if not obs.get("done", False):
                 submit_action = {"action_type": "submit"}
                 resp = safe_post(client, "/step", submit_action)
@@ -533,7 +533,7 @@ def run_task_rule_based(task_id: str, episode: int = 0,
                 steps += 1
                 log_step(steps, submit_action, reward, obs, reasoning="Final submission")
 
-            # ── Get grade ──
+            # â”€â”€ Get grade â”€â”€
             resp = safe_get(client, "/grader")
             resp.raise_for_status()
             grade = resp.json()
@@ -544,7 +544,7 @@ def run_task_rule_based(task_id: str, episode: int = 0,
         return {"task_id": task_id, "score": score, "steps": steps, "max_steps": max_steps}
 
     except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.TimeoutException) as exc:
-        # BUG 4 — On ConnectError, print a clear message and log [END] with score=0.0
+        # BUG 4 â€” On ConnectError, print a clear message and log [END] with score=0.0
         print(f"\nCONNECTION ERROR for {task_id}: {exc}", flush=True)
         log_end(task_id, score=0.0, steps=0)
         return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
@@ -555,16 +555,16 @@ def run_task_rule_based(task_id: str, episode: int = 0,
         return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # Task runner: OpenAI LLM mode
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 def run_task_openai(task_id: str, episode: int = 0,
                     verbose: bool = False) -> dict:
     task_name = TASK_NAMES.get(task_id, task_id)
     if verbose:
         print(f"\n{'=' * 55}")
-        print(f"  Task: {task_id} (OpenAI — {MODEL_NAME})")
+        print(f"  Task: {task_id} (OpenAI â€” {MODEL_NAME})")
         print(f"{'=' * 55}")
 
     try:
@@ -606,13 +606,13 @@ def run_task_openai(task_id: str, episode: int = 0,
         }
 
         with httpx.Client(timeout=REQUEST_TIMEOUT, base_url=ENV_SERVER_URL) as client:
-            # ── Reset ──
+            # â”€â”€ Reset â”€â”€
             resp = safe_post(client, "/reset", {"task_id": task_id, "contract_index": 0})
             resp.raise_for_status()
             obs = resp.json()
             system_prompt = prompts.get(task_id, "You are a legal analyst.")
 
-            # BUG 2 — max_steps: read safely from obs
+            # BUG 2 â€” max_steps: read safely from obs
             max_steps = obs.get("max_steps") or obs.get("total_steps") or DEFAULT_MAX_STEPS.get(task_id, 50)
             steps = 0
 
@@ -620,12 +620,12 @@ def run_task_openai(task_id: str, episode: int = 0,
             log_start(task_id, task_name)
 
             prev_section_idx = -1
-            same_section_count = 0  # BUG 1 — loop guard
+            same_section_count = 0  # BUG 1 â€” loop guard
 
             while not obs.get("done", False) and steps < max_steps:
                 section_idx = obs.get("current_section_index", 0)
 
-                # BUG 1 — only submit after TWO consecutive identical indices
+                # BUG 1 â€” only submit after TWO consecutive identical indices
                 same_section_count = same_section_count + 1 if section_idx == prev_section_idx else 0
                 prev_section_idx = section_idx
 
@@ -741,7 +741,7 @@ def run_task_openai(task_id: str, episode: int = 0,
                     log_step(steps, impact_action, reward, obs,
                              reasoning=f"Assessed change impact as '{impact}'")
 
-            # ── Final submit if not already done ──
+            # â”€â”€ Final submit if not already done â”€â”€
             if not obs.get("done", False):
                 submit_action = {"action_type": "submit"}
                 resp = safe_post(client, "/step", submit_action)
@@ -752,7 +752,7 @@ def run_task_openai(task_id: str, episode: int = 0,
                 steps += 1
                 log_step(steps, submit_action, reward, obs, reasoning="Final submission")
 
-            # ── Get grade ──
+            # â”€â”€ Get grade â”€â”€
             resp = safe_get(client, "/grader")
             resp.raise_for_status()
             grade = resp.json()
@@ -763,7 +763,7 @@ def run_task_openai(task_id: str, episode: int = 0,
         return {"task_id": task_id, "score": score, "steps": steps, "max_steps": max_steps}
 
     except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.TimeoutException) as exc:
-        # BUG 4 — On ConnectError, print a clear message and log [END] with score=0.0
+        # BUG 4 â€” On ConnectError, print a clear message and log [END] with score=0.0
         print(f"\nCONNECTION ERROR for {task_id}: {exc}", flush=True)
         log_end(task_id, score=0.0, steps=0)
         return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
@@ -774,9 +774,9 @@ def run_task_openai(task_id: str, episode: int = 0,
         return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
 
 
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # Main
-# ═══════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 def main():
     parser = argparse.ArgumentParser(
@@ -790,7 +790,7 @@ def main():
     parser.add_argument("--episode", type=int, default=0)
     args = parser.parse_args()
 
-    # BUG 3 — HF_TOKEN validation at startup
+    # BUG 3 â€” HF_TOKEN validation at startup
     if args.mode == "openai":
         if not os.environ.get("HF_TOKEN"):
             raise SystemExit("ERROR: HF_TOKEN is not set. Exiting.")
@@ -822,14 +822,14 @@ def main():
                 "steps": 0, "max_steps": 0, "error": str(exc),
             })
 
-    # ── Summary ──
+    # â”€â”€ Summary â”€â”€
     diff_map = {
         "clause_identification": "EASY",
         "risk_flagging": "MEDIUM",
         "contract_comparison": "HARD",
     }
     print(f"\n{'=' * 55}", flush=True)
-    print("  Contract Clause Env — Inference Results", flush=True)
+    print("  Contract Clause Env â€” Inference Results", flush=True)
     print(f"{'=' * 55}", flush=True)
     for r in results:
         diff = diff_map.get(r["task_id"], "?")
@@ -845,3 +845,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

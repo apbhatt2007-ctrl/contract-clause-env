@@ -1,4 +1,13 @@
-# Contract Clause Analysis — OpenEnv Environment
+---
+title: OpenEnv Hackathon
+emoji: ⚖️
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
+# Your existing README content starts here...# Contract Clause Analysis — OpenEnv Environment
 
 > **Meta PyTorch OpenEnv Hackathon** · Scaler School of Technology  
 > **Team:** Atharva Bhatt

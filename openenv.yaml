@@ -3,10 +3,11 @@ description: >
   An OpenEnv reinforcement learning environment for legal contract analysis.
   The agent reviews contracts, identifies clause types, flags hidden risks,
   assesses severity, compares contract versions, and produces analysis summaries.
-version: "1.1.0"
-inference_script: inference.py
-hf_space_url: "https://huggingface.co/spaces/apbhatt2007-ctrl/contract-clause-env"
+version: "1.0.0"
 author: "Hackathon Team"
+
+inference_script: inference.py
+hf_space_url: "https://huggingface.co/spaces/OWNER/SPACE"
 
 server:
   entrypoint: server/app.py
@@ -21,7 +22,6 @@ tasks:
     description: >
       Given a clean employment contract with 5-7 sections, identify and
       classify each clause type from a predefined set of legal clause categories.
-
   - id: risk_flagging
     name: Risk Flagging & Analysis
     difficulty: medium
@@ -30,7 +30,6 @@ tasks:
       Given a vendor/service contract with hidden risky clauses, identify risks,
       classify their severity (low/medium/high/critical), and explain why they
       are risky using legal reasoning.
-
   - id: contract_comparison
     name: Multi-Contract Comparison & Redlining
     difficulty: hard
@@ -61,7 +60,7 @@ endpoints:
     description: Get deterministic grade for current episode
   - path: /baseline
     method: GET
-    description: Information about running the inference py script
+    description: Information about running the baseline script
   - path: /ws
     method: WebSocket
     description: Real-time WebSocket interface

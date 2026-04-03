@@ -97,7 +97,7 @@ async def list_tasks():
                 max_steps=cfg["max_steps"],
             ).model_dump()
         )
-    return {"tasks": tasks}
+    return tasks
 
 
 @app.post("/reset")
@@ -201,4 +201,5 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run("server.app:app", host="0.0.0.0", port=7860, reload=True)
+
 

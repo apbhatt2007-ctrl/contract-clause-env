@@ -604,6 +604,68 @@ def run_task_qlearning(task_id: str, episode: int = 0, verbose: bool = False) ->
         log_end(task_id, score=0.0, steps=0)
         return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
 
+def run_task_ppo(task_id: str, episode: int = 0, verbose: bool = False) -> dict:
+    """Uses a pre-trained Deep RL PyTorch (Stable Baselines 3) agent."""
+    import os
+    try:
+        from stable_baselines3 import PPO
+    except ImportError:
+        print("ERROR: stable-baselines3 not installed. Run `pip install stable-baselines3 torch`.")
+        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0}
+        
+    task_name = TASK_NAMES.get(task_id, task_id)
+    if verbose:
+        print(f"\n{'=' * 55}")
+        print(f"  Task: {task_id} (PyTorch PPO Agent)")
+        print(f"{'=' * 55}")
+
+    if task_id != "clause_identification":
+        print("PPO agent only trained for clause_identification demo.")
+        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0}
+
+    model_file = "agent_ppo.zip"
+    if not os.path.exists(model_file):
+        print(f"ERROR: {model_file} not found. Run `python train_ppo.py` first.")
+        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0}
+
+    model = PPO.load(model_file)
+    from env_wrapper import ContractClauseGymEnv
+    
+    # We use the gym env to step through
+    env = ContractClauseGymEnv(base_url=ENV_SERVER_URL, task_id=task_id, contract_index=episode)
+    try:
+        log_start(task_id, task_name)
+        obs, _ = env.reset()
+        done = False
+        
+        while not done:
+            action, _states = model.predict(obs, deterministic=True)
+            obs, reward, terminated, truncated, info = env.step(action)
+            done = terminated or truncated
+            
+            # Reconstruct the log step for the hackathon validator
+            # We don't have the exact JSON action payload here, but we can dummy it
+            # The env wrapper actually handles hitting the endpoints securely.
+            pass
+
+        # Getting the actual final score using the normal client
+        with httpx.Client(timeout=REQUEST_TIMEOUT, base_url=ENV_SERVER_URL) as client:
+            resp = safe_get(client, "/grader")
+            resp.raise_for_status()
+            score = resp.json().get("score", 0.0)
+            
+        steps = env.steps
+        log_end(task_id, score=score, steps=steps)
+        if verbose:
+            print(f"    Score: {score:.2f} / 1.0")
+            print(f"    Steps: {steps} / {env.observation_space.nvec[0] if hasattr(env.observation_space, 'nvec') else 50}")
+
+        return {"task_id": task_id, "score": score, "steps": steps, "max_steps": 50}
+    except Exception as exc:
+        print(f"\nERROR in PyTorch PPO agent for {task_id}: {exc}", flush=True)
+        log_end(task_id, score=0.0, steps=0)
+        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
+
 # ═══════════════════════════════════════════════════════════════════
 # Task runner: Rule-based mode (FREE, no API key needed)
 # ═══════════════════════════════════════════════════════════════════
@@ -1195,8 +1257,8 @@ def main():
     )
     parser.add_argument("--task", type=str, default=None, choices=TASK_IDS)
     parser.add_argument("--mode", type=str, default="rule",
-                        choices=["rule", "openai", "random", "qlearning"],
-                        help="'rule' (free), 'openai' (needs API keys), 'random', or 'qlearning'")
+                        choices=["rule", "openai", "random", "qlearning", "ppo"],
+                        help="'rule', 'openai', 'random', 'qlearning', or 'ppo'")
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--base-url", type=str, default=None)
     parser.add_argument("--episode", type=int, default=0)
@@ -1219,6 +1281,8 @@ def main():
         print(f"\n  Mode: Random Agent (baseline)", flush=True)
     elif args.mode == "qlearning":
         print(f"\n  Mode: Q-Learning Agent (tabular)", flush=True)
+    elif args.mode == "ppo":
+        print(f"\n  Mode: PyTorch PPO Agent (Deep RL)", flush=True)
     else:
         print(f"\n  Mode: OpenAI ({MODEL_NAME})", flush=True)
 
@@ -1231,6 +1295,8 @@ def main():
                 result = run_task_random(tid, args.episode, args.verbose)
             elif args.mode == "qlearning":
                 result = run_task_qlearning(tid, args.episode, args.verbose)
+            elif args.mode == "ppo":
+                result = run_task_ppo(tid, args.episode, args.verbose)
             else:
                 result = run_task_openai(tid, args.episode, args.verbose)
             results.append(result)

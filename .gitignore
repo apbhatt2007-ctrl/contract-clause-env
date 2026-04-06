@@ -39,6 +39,7 @@ Thumbs.db
 # Temp / debug files
 presubmit_results.txt
 push_log.txt
+RESULTS.md
 
 # Removed from submission (keep locally, not tracked)
 _clause_test.txt

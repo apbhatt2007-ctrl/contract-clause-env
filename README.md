@@ -241,7 +241,6 @@ contract_clause_env/
 ├── Dockerfile                 # Docker config (port 7860)
 ├── requirements.txt           # Python dependencies
 ├── README.md                  # This file
-├── RESULTS.md                 # Detailed score results
 ├── models.py                  # Pydantic v2 data models (Action, Observation)
 ├── client.py                  # HTTP client helper
 ├── test_presubmit.py          # Pre-submission validator (8 checks)

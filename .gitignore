@@ -39,3 +39,15 @@ Thumbs.db
 # Temp / debug files
 presubmit_results.txt
 push_log.txt
+
+# Removed from submission (keep locally, not tracked)
+_clause_test.txt
+_comp_test.txt
+_risk_test.txt
+generate_audio.py
+generate_report.py
+TEAM_GUIDE.md
+uv.lock
+pyproject.toml
+server/Dockerfile
+server/requirements.txt

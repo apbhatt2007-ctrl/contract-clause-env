@@ -30,9 +30,12 @@ load_dotenv()
 # ─── Environment variables (MANDATORY) ────────────────────────────
 # Must read: API_BASE_URL, MODEL_NAME, HF_TOKEN
 # Must NOT use: OPENAI_API_KEY or OPENAI_MODEL
-API_BASE_URL = os.environ.get("API_BASE_URL", "https://api.openai.com/v1")
-MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
-HF_TOKEN = os.environ.get("HF_TOKEN", "")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
+HF_TOKEN = os.getenv("HF_TOKEN")
+
+# Optional - if you use from_docker_image():
+LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 
 # OpenEnv server runs at localhost:7860
 ENV_SERVER_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")

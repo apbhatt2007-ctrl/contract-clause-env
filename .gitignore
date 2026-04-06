@@ -52,3 +52,11 @@ uv.lock
 pyproject.toml
 server/Dockerfile
 server/requirements.txt
+random_results.txt
+learning_curve.csv
+code_context.md
+advanced_stress.py
+stress_report.md
+final_benchmark_report.md
+readiness_report.md
+project_summary.md

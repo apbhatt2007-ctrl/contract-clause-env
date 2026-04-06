@@ -7,7 +7,12 @@ sdk: docker
 pinned: false
 ---
 
-# Contract Clause Analysis — OpenEnv Environment
+# ⚖️ Contract Clause Analysis — OpenEnv Environment
+
+[![Hugging Face Space](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Space-blue)](https://huggingface.co/spaces/Atharva4/OpenEnvhackathon)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Stable Baselines 3 & PyTorch](https://img.shields.io/badge/Deep_RL-PyTorch_%7C_SB3-ee4c2c.svg)](https://stable-baselines3.readthedocs.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > **Meta × PyTorch OpenEnv Hackathon** · Scaler School of Technology  
 > **Team:** Atharva Bhatt  
@@ -290,14 +295,19 @@ Tests verify:
 
 ```
 contract_clause_env/
-├── inference.py               # Inference script (rule-based + random + OpenAI LLM)
+├── inference.py               # Inference script (rule-based + random + OpenAI + QLearning + PPO)
 ├── openenv.yaml               # OpenEnv manifest
 ├── Dockerfile                 # Docker config (port 7860)
 ├── requirements.txt           # Python dependencies
 ├── README.md                  # This file
+├── env_wrapper.py             # Gymnasium standard wrapper for Deep RL
+├── train_ppo.py               # Stable Baselines 3 PPO PyTorch training loop
+├── train_qlearning.py         # Tabular Q-learning script
+├── agent_ppo.zip              # Pre-trained Deep RL PyTorch model weights
+├── q_table.json               # Pre-trained Tabular RL state matrix
 ├── models.py                  # Pydantic v2 data models (Action, Observation)
 ├── client.py                  # HTTP client helper
-├── test_presubmit.py          # Pre-submission validator (8 checks)
+├── test_presubmit.py          # Pre-submission validator (8/8 checks)
 ├── data/
 │   ├── __init__.py            # Unified data loader
 │   ├── contracts_easy.py      # Employment contracts (5 contracts)
@@ -320,6 +330,7 @@ contract_clause_env/
 ## Tech Stack
 
 - **Framework:** [OpenEnv](https://github.com/raun/openenv-course)
+- **Deep RL:** PyTorch, Stable Baselines 3, Gymnasium
 - **Server:** FastAPI + Uvicorn
 - **Models:** Pydantic v2
 - **LLM Client:** OpenAI Python SDK

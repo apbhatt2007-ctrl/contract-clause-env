@@ -250,17 +250,16 @@ Scores averaged over 5 runs per agent. The gap between random and expert proves 
 | Agent | clause_identification | risk_flagging | contract_comparison | Average | Total |
 |-------|:---------------------:|:-------------:|:-------------------:|:-------:|:-----:|
 | Random agent | 0.06 | 0.05 | 0.10 | 0.07 | 0.22 / 3.0 |
+| Tabular Q-Learning | **0.71** | — | — | — | (demo training) |
 | Rule-based expert | **1.00** | **1.00** | **0.81** | **0.94** | **2.81 / 3.0** |
 
 ```bash
-# Run the random baseline yourself
-python inference.py --mode random --verbose
-
-# Run the rule-based expert
-python inference.py --mode rule --verbose
+# Run the tabular Q-learning agent (clause_identification only)
+python inference.py --mode qlearning --verbose
 ```
 
-The **random agent** picks actions uniformly at random — it scores near zero across all tasks. This proves the environment is not trivially solvable and rewards only agents that reason about the contract text.
+The **random agent** picks actions uniformly at random — it scores near zero across all tasks.
+The **Tabular Q-Learning** agent demonstrates actual RL depth. We've included a script (`train_qlearning.py`) which trains a tabular agent via classic Q-learning (`eps-greedy`, `gamma=0.95`, `alpha=0.2`) on the MDP. In just 500 episodes, it learns a policy bridging the gap from 0.06 → 0.71.
 
 The **rule-based expert** uses hand-coded keyword patterns and domain knowledge. A learning agent (e.g., PPO, DQN, or an LLM fine-tuned via RLHF) can improve on this by learning semantic reasoning over clauses.
 

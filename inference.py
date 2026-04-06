@@ -526,6 +526,84 @@ def run_task_random(task_id: str, episode: int = 0,
         return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
 
 
+def run_task_qlearning(task_id: str, episode: int = 0, verbose: bool = False) -> dict:
+    """Uses a pre-trained tabular Q-learning agent on clause_identification."""
+    import os
+    task_name = TASK_NAMES.get(task_id, task_id)
+    if verbose:
+        print(f"\n{'=' * 55}")
+        print(f"  Task: {task_id} (Q-Learning Agent)")
+        print(f"{'=' * 55}")
+
+    if task_id != "clause_identification":
+        print("Q-Learning agent only trained for clause_identification.")
+        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0}
+
+    q_file = "q_table.json"
+    if not os.path.exists(q_file):
+        print(f"ERROR: {q_file} not found. Run `python train_qlearning.py` first.")
+        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0}
+
+    with open(q_file, "r") as f:
+        Q = json.load(f)
+
+    try:
+        with httpx.Client(timeout=REQUEST_TIMEOUT, base_url=ENV_SERVER_URL) as client:
+            resp = safe_post(client, "/reset", {"task_id": task_id, "contract_index": episode})
+            resp.raise_for_status()
+            obs = resp.json()
+
+            max_steps = obs.get("max_steps") or DEFAULT_MAX_STEPS.get(task_id, 50)
+            steps = 0
+            log_start(task_id, task_name)
+
+            has_identified = False
+            while steps < max_steps and not obs.get("done", False):
+                state = f"{obs.get('current_section_index', 0)}_{has_identified}"
+                
+                # Exploit using Q-table (epsilon = 0.0)
+                if state in Q:
+                    action_key = max(Q[state], key=Q[state].get)
+                else:
+                    action_key = "next_section" # Fallback if unseen
+
+                if action_key == "next_section":
+                    action = {"action_type": "next_section", "confidence": 1.0}
+                    next_has_identified = False
+                else:
+                    action = {
+                        "action_type": "identify_clause",
+                        "clause_index": obs.get("current_section_index", 0),
+                        "clause_type": action_key,
+                        "confidence": 1.0
+                    }
+                    next_has_identified = True
+
+                resp = safe_post(client, "/step", action)
+                resp.raise_for_status()
+                result = resp.json()
+                obs = result.get("observation", obs)
+                steps += 1
+                has_identified = next_has_identified
+                log_step(steps, action, result.get("reward", 0.0), obs,
+                         reasoning="Q-table greedy action")
+
+            resp = safe_get(client, "/grader")
+            resp.raise_for_status()
+            score = resp.json().get("score", 0.0)
+            log_end(task_id, score=score, steps=steps)
+
+            if verbose:
+                print(f"    Score: {score:.2f} / 1.0")
+                print(f"    Steps: {steps} / {max_steps}")
+
+            return {"task_id": task_id, "score": score, "steps": steps, "max_steps": max_steps}
+
+    except Exception as exc:
+        print(f"\nERROR in Q-learning agent for {task_id}: {exc}", flush=True)
+        log_end(task_id, score=0.0, steps=0)
+        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
+
 # ═══════════════════════════════════════════════════════════════════
 # Task runner: Rule-based mode (FREE, no API key needed)
 # ═══════════════════════════════════════════════════════════════════
@@ -1117,8 +1195,8 @@ def main():
     )
     parser.add_argument("--task", type=str, default=None, choices=TASK_IDS)
     parser.add_argument("--mode", type=str, default="rule",
-                        choices=["rule", "openai", "random"],
-                        help="'rule' (free, no API key), 'openai' (requires env vars), or 'random' (baseline)")
+                        choices=["rule", "openai", "random", "qlearning"],
+                        help="'rule' (free), 'openai' (needs API keys), 'random', or 'qlearning'")
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--base-url", type=str, default=None)
     parser.add_argument("--episode", type=int, default=0)
@@ -1139,6 +1217,8 @@ def main():
         print(f"\n  Mode: Rule-Based (FREE)", flush=True)
     elif args.mode == "random":
         print(f"\n  Mode: Random Agent (baseline)", flush=True)
+    elif args.mode == "qlearning":
+        print(f"\n  Mode: Q-Learning Agent (tabular)", flush=True)
     else:
         print(f"\n  Mode: OpenAI ({MODEL_NAME})", flush=True)
 
@@ -1149,6 +1229,8 @@ def main():
                 result = run_task_rule_based(tid, args.episode, args.verbose)
             elif args.mode == "random":
                 result = run_task_random(tid, args.episode, args.verbose)
+            elif args.mode == "qlearning":
+                result = run_task_qlearning(tid, args.episode, args.verbose)
             else:
                 result = run_task_openai(tid, args.episode, args.verbose)
             results.append(result)

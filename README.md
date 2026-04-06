@@ -1,3 +1,12 @@
+---
+title: OpenEnv Hackathon
+emoji: ⚖️
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # ⚖️ Contract Clause Analysis — OpenEnv Environment
 
 [![Hugging Face Space](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Space-blue)](https://huggingface.co/spaces/Atharva4/OpenEnvhackathon) [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/) [![Stable Baselines 3 & PyTorch](https://img.shields.io/badge/Deep_RL-PyTorch_%7C_SB3-ee4c2c.svg)](https://stable-baselines3.readthedocs.io/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

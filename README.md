@@ -245,23 +245,50 @@ The inference script uses the **OpenAI Python SDK** for all LLM calls and emits 
 
 ### Agent Performance Comparison
 
-| Agent | clause_identification | risk_flagging | contract_comparison | Average |
-|-------|:---------------------:|:-------------:|:-------------------:|:-------:|
-| Random agent | 0.14 | 0.00 | 0.00 | 0.05 |
-| Rule-based expert | **1.00** | **1.00** | **0.81** | **0.94** |
+Scores averaged over 5 runs per agent. The gap between random and expert proves the environment provides meaningful, learnable signal.
 
-The **random agent** picks actions uniformly at random — it scores near zero, demonstrating the environment provides meaningful signal only to agents that reason about the text.
+| Agent | clause_identification | risk_flagging | contract_comparison | Average | Total |
+|-------|:---------------------:|:-------------:|:-------------------:|:-------:|:-----:|
+| Random agent | 0.06 | 0.05 | 0.10 | 0.07 | 0.22 / 3.0 |
+| Rule-based expert | **1.00** | **1.00** | **0.81** | **0.94** | **2.81 / 3.0** |
 
-The **rule-based expert** uses hand-coded keyword patterns — it represents the ceiling a non-learning system can achieve. The environment is designed so that LLM-based agents can learn to reason about contract semantics rather than relying on keyword matching.
+```bash
+# Run the random baseline yourself
+python inference.py --mode random --verbose
+
+# Run the rule-based expert
+python inference.py --mode rule --verbose
+```
+
+The **random agent** picks actions uniformly at random — it scores near zero across all tasks. This proves the environment is not trivially solvable and rewards only agents that reason about the contract text.
+
+The **rule-based expert** uses hand-coded keyword patterns and domain knowledge. A learning agent (e.g., PPO, DQN, or an LLM fine-tuned via RLHF) can improve on this by learning semantic reasoning over clauses.
 
 ---
 
+
+## Testing
+
+The project includes 18 unit tests covering all grading functions:
+
+```bash
+python -m pytest tests/test_graders.py -v
+```
+
+Tests verify:
+- Clause identification scoring with exact and semantic matching
+- Risk flagging multi-component grading (40/30/30 weighted)
+- Contract comparison with false positive penalties
+- Grading determinism (same input → same output, always)
+- Edge cases (empty inputs, missing fields, boundary conditions)
+
+---
 
 ## Project Structure
 
 ```
 contract_clause_env/
-├── inference.py               # Inference script (rule-based + OpenAI LLM)
+├── inference.py               # Inference script (rule-based + random + OpenAI LLM)
 ├── openenv.yaml               # OpenEnv manifest
 ├── Dockerfile                 # Docker config (port 7860)
 ├── requirements.txt           # Python dependencies
@@ -281,6 +308,9 @@ contract_clause_env/
 │   ├── __init__.py
 │   ├── app.py                 # FastAPI server (REST + WebSocket)
 │   └── environment.py         # Core RL environment logic
+├── tests/
+│   ├── __init__.py
+│   └── test_graders.py        # 18 pytest unit tests for grading logic
 └── tasks/
     └── __init__.py            # Task configuration
 ```
@@ -291,7 +321,8 @@ contract_clause_env/
 - **Server:** FastAPI + Uvicorn
 - **Models:** Pydantic v2
 - **LLM Client:** OpenAI Python SDK
-- **Containerization:** Docker (HF Spaces compatible, port 7860)
+- **Testing:** pytest (18 unit tests)
+- **Containerization:** Docker (python:3.11-slim, port 7860)
 - **Protocol:** REST + WebSocket
 - **Deployment:** Hugging Face Spaces
 

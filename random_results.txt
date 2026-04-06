@@ -1,0 +1,6 @@
+﻿Random Agent Scores (5 runs)
+==================================================
+  clause_identification: avg=0.000 scores=[0.0, 0.0, 0.0, 0.0, 0.0]
+  risk_flagging: avg=0.107 scores=[0.1, 0.2, 0.1, 0.13, 0.0]
+  contract_comparison: avg=0.110 scores=[0.0, 0.17, 0.1, 0.1, 0.17]
+  TOTAL avg: 0.217 / 3.0

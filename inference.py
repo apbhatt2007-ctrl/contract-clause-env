@@ -439,6 +439,94 @@ def safe_get(client: httpx.Client, url: str) -> httpx.Response:
 
 
 # ═══════════════════════════════════════════════════════════════════
+# Task runner: Random agent baseline (proves environment signal)
+# ═══════════════════════════════════════════════════════════════════
+
+import random
+
+RANDOM_CLAUSE_TYPES = [
+    "position", "compensation", "termination", "confidentiality",
+    "non_compete", "ip_assignment", "benefits", "governing_law",
+]
+RANDOM_RISK_TYPES = ["auto_renewal_trap", "unlimited_liability", "unilateral_amendment"]
+RANDOM_SEVERITIES = ["low", "medium", "high", "critical"]
+RANDOM_IMPACTS = ["favorable", "neutral", "unfavorable"]
+
+
+def run_task_random(task_id: str, episode: int = 0,
+                    verbose: bool = False) -> dict:
+    """Random agent — picks actions uniformly at random. Proves score range."""
+    task_name = TASK_NAMES.get(task_id, task_id)
+    if verbose:
+        print(f"\n{'=' * 55}")
+        print(f"  Task: {task_id} (random agent)")
+        print(f"{'=' * 55}")
+
+    try:
+        with httpx.Client(timeout=REQUEST_TIMEOUT, base_url=ENV_SERVER_URL) as client:
+            resp = safe_post(client, "/reset", {"task_id": task_id, "contract_index": episode})
+            resp.raise_for_status()
+            obs = resp.json()
+
+            max_steps = obs.get("max_steps") or DEFAULT_MAX_STEPS.get(task_id, 50)
+            steps = 0
+            log_start(task_id, task_name)
+
+            total_sections = obs.get("total_sections", 7)
+
+            while steps < max_steps and not obs.get("done", False):
+                # Pick a random action
+                if task_id == "clause_identification":
+                    action = {
+                        "action_type": random.choice(["identify_clause", "next_section"]),
+                        "clause_index": obs.get("current_section_index", 0),
+                        "clause_type": random.choice(RANDOM_CLAUSE_TYPES),
+                        "confidence": round(random.random(), 2),
+                    }
+                elif task_id == "risk_flagging":
+                    action = {
+                        "action_type": random.choice(["flag_risk", "assess_severity", "next_section"]),
+                        "clause_index": obs.get("current_section_index", 0),
+                        "clause_type": random.choice(RANDOM_RISK_TYPES),
+                        "risk_level": random.choice(RANDOM_SEVERITIES),
+                        "confidence": round(random.random(), 2),
+                    }
+                else:  # contract_comparison
+                    action = {
+                        "action_type": random.choice(["detect_change", "assess_impact", "next_section"]),
+                        "clause_index": obs.get("current_section_index", 0),
+                        "clause_type": "modified",
+                        "impact": random.choice(RANDOM_IMPACTS),
+                        "confidence": round(random.random(), 2),
+                    }
+
+                resp = safe_post(client, "/step", action)
+                resp.raise_for_status()
+                result = resp.json()
+                obs = result.get("observation", obs)
+                steps += 1
+                log_step(steps, action, result.get("reward", 0.0), obs,
+                         reasoning="Random action")
+
+            # Get final score
+            resp = safe_get(client, "/grader")
+            resp.raise_for_status()
+            score = resp.json().get("score", 0.0)
+            log_end(task_id, score=score, steps=steps)
+
+            if verbose:
+                print(f"    Score: {score:.2f} / 1.0")
+                print(f"    Steps: {steps} / {max_steps}")
+
+            return {"task_id": task_id, "score": score, "steps": steps, "max_steps": max_steps}
+
+    except Exception as exc:
+        print(f"\nERROR in random agent for {task_id}: {exc}", flush=True)
+        log_end(task_id, score=0.0, steps=0)
+        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
+
+
+# ═══════════════════════════════════════════════════════════════════
 # Task runner: Rule-based mode (FREE, no API key needed)
 # ═══════════════════════════════════════════════════════════════════
 
@@ -1029,8 +1117,8 @@ def main():
     )
     parser.add_argument("--task", type=str, default=None, choices=TASK_IDS)
     parser.add_argument("--mode", type=str, default="rule",
-                        choices=["rule", "openai"],
-                        help="'rule' (free, no API key) or 'openai' (requires API_BASE_URL, MODEL_NAME, HF_TOKEN)")
+                        choices=["rule", "openai", "random"],
+                        help="'rule' (free, no API key), 'openai' (requires env vars), or 'random' (baseline)")
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--base-url", type=str, default=None)
     parser.add_argument("--episode", type=int, default=0)
@@ -1049,6 +1137,8 @@ def main():
 
     if args.mode == "rule":
         print(f"\n  Mode: Rule-Based (FREE)", flush=True)
+    elif args.mode == "random":
+        print(f"\n  Mode: Random Agent (baseline)", flush=True)
     else:
         print(f"\n  Mode: OpenAI ({MODEL_NAME})", flush=True)
 
@@ -1057,6 +1147,8 @@ def main():
         try:
             if args.mode == "rule":
                 result = run_task_rule_based(tid, args.episode, args.verbose)
+            elif args.mode == "random":
+                result = run_task_random(tid, args.episode, args.verbose)
             else:
                 result = run_task_openai(tid, args.episode, args.verbose)
             results.append(result)

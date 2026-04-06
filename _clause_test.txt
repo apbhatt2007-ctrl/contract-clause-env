@@ -1,0 +1,41 @@
+
+  Mode: Rule-Based (FREE)
+
+=======================================================
+  Task: clause_identification (rule-based � FREE)
+=======================================================
+[START] {"task_id":"clause_identification","task_name":"Clause Identification"}
+  Step 1: identify section 0 -> 'position' (from heading)
+[STEP] {"step":1,"action":{"action_type":"identify_clause","clause_index":0,"clause_type":"position","confidence":0.95},"reward":0.1,"obs":{"section_index":0,"section_heading":"1. POSITION AND DUTIES","done":false,"reward":0.1,"progress":0.143,"system_feedback":"Correct! Section 0 identified as 'position'."},"reasoning":"Heading-classified '1. POSITION AND DUTIES' -> 'position'"}
+    reward=0.100 Correct! Section 0 identified as 'position'.
+[STEP] {"step":2,"action":{"action_type":"next_section"},"reward":0.01,"obs":{"section_index":1,"section_heading":"2. COMPENSATION AND BENEFITS","done":false,"reward":0.01,"progress":0.286,"system_feedback":"Advanced to section 1."},"reasoning":"Navigate to section"}
+  Step 3: identify section 1 -> 'compensation' (from heading)
+[STEP] {"step":3,"action":{"action_type":"identify_clause","clause_index":1,"clause_type":"compensation","confidence":0.95},"reward":0.1,"obs":{"section_index":1,"section_heading":"2. COMPENSATION AND BENEFITS","done":false,"reward":0.1,"progress":0.286,"system_feedback":"Correct! Section 1 identified as 'compensation'."},"reasoning":"Heading-classified '2. COMPENSATION AND BENEFITS' -> 'compensation'"}
+    reward=0.100 Correct! Section 1 identified as 'compensation'.
+[STEP] {"step":4,"action":{"action_type":"next_section"},"reward":0.01,"obs":{"section_index":2,"section_heading":"3. TERMINATION","done":false,"reward":0.01,"progress":0.429,"system_feedback":"Advanced to section 2."},"reasoning":"Navigate to section"}
+  Step 5: identify section 2 -> 'termination' (from heading)
+[STEP] {"step":5,"action":{"action_type":"identify_clause","clause_index":2,"clause_type":"termination","confidence":0.95},"reward":0.1,"obs":{"section_index":2,"section_heading":"3. TERMINATION","done":false,"reward":0.1,"progress":0.429,"system_feedback":"Correct! Section 2 identified as 'termination'."},"reasoning":"Heading-classified '3. TERMINATION' -> 'termination'"}
+    reward=0.100 Correct! Section 2 identified as 'termination'.
+[STEP] {"step":6,"action":{"action_type":"next_section"},"reward":0.01,"obs":{"section_index":3,"section_heading":"4. CONFIDENTIALITY AND NON-DISCLOSURE","done":false,"reward":0.01,"progress":0.571,"system_feedback":"Advanced to section 3."},"reasoning":"Navigate to section"}
+  Step 7: identify section 3 -> 'confidentiality' (inferred)
+[STEP] {"step":7,"action":{"action_type":"identify_clause","clause_index":3,"clause_type":"confidentiality","confidence":0.6},"reward":0.1,"obs":{"section_index":3,"section_heading":"4. CONFIDENTIALITY AND NON-DISCLOSURE","done":false,"reward":0.1,"progress":0.571,"system_feedback":"Correct! Section 3 identified as 'confidentiality'."},"reasoning":"Position-inferred type 'confidentiality' for unvisited section 3"}
+    reward=0.100 Correct! Section 3 identified as 'confidentiality'.
+  Step 8: identify section 4 -> 'ip_assignment' (inferred)
+[STEP] {"step":8,"action":{"action_type":"identify_clause","clause_index":4,"clause_type":"ip_assignment","confidence":0.6},"reward":0.1,"obs":{"section_index":3,"section_heading":"4. CONFIDENTIALITY AND NON-DISCLOSURE","done":false,"reward":0.1,"progress":0.571,"system_feedback":"Correct! Section 4 identified as 'ip_assignment'."},"reasoning":"Position-inferred type 'ip_assignment' for unvisited section 4"}
+    reward=0.100 Correct! Section 4 identified as 'ip_assignment'.
+  Step 9: identify section 5 -> 'non_compete' (inferred)
+[STEP] {"step":9,"action":{"action_type":"identify_clause","clause_index":5,"clause_type":"non_compete","confidence":0.6},"reward":0.1,"obs":{"section_index":3,"section_heading":"4. CONFIDENTIALITY AND NON-DISCLOSURE","done":false,"reward":0.1,"progress":0.571,"system_feedback":"Correct! Section 5 identified as 'non_compete'."},"reasoning":"Position-inferred type 'non_compete' for unvisited section 5"}
+    reward=0.100 Correct! Section 5 identified as 'non_compete'.
+  Step 10: identify section 6 -> 'governing_law' (inferred)
+[STEP] {"step":10,"action":{"action_type":"identify_clause","clause_index":6,"clause_type":"governing_law","confidence":0.6},"reward":0.0,"obs":{"section_index":3,"section_heading":"4. CONFIDENTIALITY AND NON-DISCLOSURE","done":true,"reward":0.0,"progress":0.571,"system_feedback":"Correct! Section 6 identified as 'governing_law'. | Episode timeout \u2014 max steps reached."},"reasoning":"Position-inferred type 'governing_law' for unvisited section 6"}
+    reward=0.000 Correct! Section 6 identified as 'governing_law'. | Episode 
+[END] {"task_id":"clause_identification","score":1.0,"steps":10}
+
+=======================================================
+  Contract Clause Env � Inference Results
+=======================================================
+  Task: clause_identification (EASY)
+    Score: 1.00 / 1.0
+    Steps: 10 / 10
+=======================================================
+

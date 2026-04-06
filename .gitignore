@@ -30,3 +30,12 @@ Thumbs.db
 
 # Docker
 *.log
+
+# Binary / media files
+*.mp3
+*.wav
+*.mp4
+
+# Temp / debug files
+presubmit_results.txt
+push_log.txt

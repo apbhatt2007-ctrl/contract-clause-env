@@ -4,7 +4,7 @@ description: >
   The agent reviews contracts, identifies clause types, flags hidden risks,
   assesses severity, compares contract versions, and produces analysis summaries.
 version: "1.0.0"
-author: "Hackathon Team"
+author: "Kernel Crafters"
 
 inference_script: inference.py
 hf_space_url: "https://huggingface.co/spaces/Atharva4/OpenEnvhackathon"

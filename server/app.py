@@ -70,7 +70,7 @@ class ResetRequest(BaseModel):
 async def root():
     return {
         "name": "Contract Clause Analysis - OpenEnv",
-        "team": "antigravity",
+        "team": "Kernel Crafters",
         "version": "1.0.0",
         "status": "running",
         "endpoints": ["/health", "/tasks", "/reset", "/step", "/state", "/grader"],

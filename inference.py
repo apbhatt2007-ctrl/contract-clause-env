@@ -1,7 +1,7 @@
 """
 Inference script for the Contract Clause Analysis OpenEnv environment.
 
-Team: antigravity
+Team: Kernel Crafters
 Domain: Legal contract review (clause identification, risk flagging, contract comparison)
 
 Usage:
@@ -1253,7 +1253,7 @@ def run_task_openai(task_id: str, episode: int = 0,
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run inference for Contract Clause Env (Team: antigravity)"
+        description="Run inference for Contract Clause Env (Team: Kernel Crafters)"
     )
     parser.add_argument("--task", type=str, default=None, choices=TASK_IDS)
     parser.add_argument("--mode", type=str, default="rule",

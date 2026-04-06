@@ -1028,8 +1028,9 @@ def main():
         description="Run inference for Contract Clause Env (Team: antigravity)"
     )
     parser.add_argument("--task", type=str, default=None, choices=TASK_IDS)
-    parser.add_argument("--mode", type=str, default="openai",
-                        choices=["rule", "openai"])
+    parser.add_argument("--mode", type=str, default="rule",
+                        choices=["rule", "openai"],
+                        help="'rule' (free, no API key) or 'openai' (requires API_BASE_URL, MODEL_NAME, HF_TOKEN)")
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--base-url", type=str, default=None)
     parser.add_argument("--episode", type=int, default=0)

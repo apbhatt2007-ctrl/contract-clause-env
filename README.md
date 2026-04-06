@@ -204,33 +204,58 @@ print(f"Score: {grade['score']}")
 
 ---
 
+## Architecture
+
+```mermaid
+graph LR
+    A["Agent (inference.py)"] -->|"POST /reset"| S["Environment Server (FastAPI)"]
+    A -->|"POST /step(action)"| S
+    S -->|"observation + reward"| A
+    S -->|"GET /grader"| G["Deterministic Grader"]
+    G -->|"score ∈ [0,1]"| A
+    S --- D["Contract Data"]
+    S --- E["Environment Logic"]
+    
+    style A fill:#4fc3f7,stroke:#0288d1,color:#000
+    style S fill:#81c784,stroke:#388e3c,color:#000
+    style G fill:#ffb74d,stroke:#f57c00,color:#000
+    style D fill:#e0e0e0,stroke:#757575,color:#000
+    style E fill:#e0e0e0,stroke:#757575,color:#000
+```
+
+---
+
 ## Inference Script
 
 The inference script is `inference.py` in the project root. It supports both **rule-based** (free, deterministic) and **OpenAI LLM** modes.
 
 ```bash
-# Rule-based mode (no API key needed)
-python inference.py --mode rule --verbose
+# Default: rule-based mode (no API key needed)
+python inference.py --verbose
 
-# OpenAI LLM mode (requires API_BASE_URL, MODEL_NAME, HF_TOKEN)
-python inference.py --mode openai --verbose
+# Explicitly specify mode
+python inference.py --mode rule --verbose
+python inference.py --mode openai --verbose   # requires API_BASE_URL, MODEL_NAME, HF_TOKEN
 
 # Single task
-python inference.py --mode rule --task clause_identification --verbose
+python inference.py --task clause_identification --verbose
 ```
 
-The inference script uses the **OpenAI Python SDK** for all LLM calls and emits structured `[START]`, `[STEP]`, `[END]` stdout logs as required.
+The inference script uses the **OpenAI Python SDK** for all LLM calls and emits structured `[START]`, `[STEP]`, `[END]` stdout logs as required by the hackathon spec.
 
-### Baseline Results
+### Agent Performance Comparison
 
-| Task | Difficulty | Score | Steps |
-|------|-----------|-------|-------|
-| Clause Identification | Easy | **1.0000** | 8 / 10 |
-| Risk Flagging | Medium | **1.0000** | 18 / 25 |
-| Contract Comparison | Hard | **0.8133** | 31 / 50 |
-| **Total** | — | **2.8133 / 3.0** | — |
+| Agent | clause_identification | risk_flagging | contract_comparison | Average |
+|-------|:---------------------:|:-------------:|:-------------------:|:-------:|
+| Random agent | 0.14 | 0.00 | 0.00 | 0.05 |
+| Rule-based expert | **1.00** | **1.00** | **0.81** | **0.94** |
+
+The **random agent** picks actions uniformly at random — it scores near zero, demonstrating the environment provides meaningful signal only to agents that reason about the text.
+
+The **rule-based expert** uses hand-coded keyword patterns — it represents the ceiling a non-learning system can achieve. The environment is designed so that LLM-based agents can learn to reason about contract semantics rather than relying on keyword matching.
 
 ---
+
 
 ## Project Structure
 

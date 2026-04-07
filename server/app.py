@@ -200,11 +200,9 @@ async def websocket_endpoint(ws: WebSocket):
 # Entry point
 # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-if __name__ == "__main__":
+def main():
     import uvicorn
-
     uvicorn.run("server.app:app", host="0.0.0.0", port=7860, reload=False)
 
-
-
-
+if __name__ == "__main__":
+    main()

@@ -20,10 +20,14 @@ dependencies = [
     "httpx>=0.25.0",
     "openai>=1.6.0",
     "numpy>=1.24.0",
+    "openenv-core>=0.2.0",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff", "mypy"]
+
+[project.scripts]
+server = "server.app:main"
 
 [tool.ruff]
 line-length = 100

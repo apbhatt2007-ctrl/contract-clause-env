@@ -10,6 +10,7 @@ import asyncio
 import json
 import sys
 import os
+from typing import Optional
 
 # Ensure project root is on sys.path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -101,8 +102,10 @@ async def list_tasks():
 
 
 @app.post("/reset")
-async def reset(req: ResetRequest):
+async def reset(req: Optional[ResetRequest] = None):
     """Reset environment with a specific task and contract."""
+    if req is None:
+        req = ResetRequest()
     try:
         obs = env.reset(task_id=req.task_id, contract_index=req.contract_index)
         return obs.model_dump()

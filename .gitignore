@@ -48,8 +48,8 @@ _risk_test.txt
 generate_audio.py
 generate_report.py
 TEAM_GUIDE.md
-uv.lock
-pyproject.toml
+# uv.lock
+# pyproject.toml
 server/Dockerfile
 server/requirements.txt
 random_results.txt

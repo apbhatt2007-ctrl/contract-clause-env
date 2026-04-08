@@ -1,0 +1,235 @@
+{
+  "results": [
+    {
+      "level": "PASS",
+      "test": "health",
+      "msg": "GET /health \u2192 200 (1.01s)"
+    },
+    {
+      "level": "PASS",
+      "test": "tasks",
+      "msg": "All 3 tasks present: ['clause_identification', 'risk_flagging', 'contract_comparison']"
+    },
+    {
+      "level": "PASS",
+      "test": "tasks/clause_identification",
+      "msg": "Schema valid. max_steps=10"
+    },
+    {
+      "level": "PASS",
+      "test": "tasks/risk_flagging",
+      "msg": "Schema valid. max_steps=25"
+    },
+    {
+      "level": "PASS",
+      "test": "tasks/contract_comparison",
+      "msg": "Schema valid. max_steps=50"
+    },
+    {
+      "level": "PASS",
+      "test": "baseline",
+      "msg": "References inference.py correctly"
+    },
+    {
+      "level": "PASS",
+      "test": "state_pre_reset",
+      "msg": "Handles pre-reset state: 200"
+    },
+    {
+      "level": "PASS",
+      "test": "easy/c0",
+      "msg": "Score: 1.0000"
+    },
+    {
+      "level": "PASS",
+      "test": "easy/c1",
+      "msg": "Score: 1.0000"
+    },
+    {
+      "level": "PASS",
+      "test": "easy/c2",
+      "msg": "Score: 1.0000"
+    },
+    {
+      "level": "PASS",
+      "test": "easy/c3",
+      "msg": "Score: 1.0000"
+    },
+    {
+      "level": "PASS",
+      "test": "easy/c4",
+      "msg": "Score: 1.0000"
+    },
+    {
+      "level": "INFO",
+      "test": "easy_avg",
+      "msg": "Average easy score: 1.0000"
+    },
+    {
+      "level": "PASS",
+      "test": "determinism",
+      "msg": "3 runs identical: [1.0, 1.0, 1.0]"
+    },
+    {
+      "level": "PASS",
+      "test": "medium/c0",
+      "msg": "Score: 1.0000"
+    },
+    {
+      "level": "PASS",
+      "test": "medium/c1",
+      "msg": "Score: 1.0000"
+    },
+    {
+      "level": "PASS",
+      "test": "medium/c2",
+      "msg": "Score: 1.0000"
+    },
+    {
+      "level": "PASS",
+      "test": "medium/c3",
+      "msg": "Score: 1.0000"
+    },
+    {
+      "level": "PASS",
+      "test": "medium/c4",
+      "msg": "Score: 0.8000"
+    },
+    {
+      "level": "INFO",
+      "test": "medium_avg",
+      "msg": "Average medium score: 0.9600"
+    },
+    {
+      "level": "PASS",
+      "test": "hard/c0",
+      "msg": "Score: 0.8333"
+    },
+    {
+      "level": "PASS",
+      "test": "hard/c1",
+      "msg": "Score: 0.9143"
+    },
+    {
+      "level": "PASS",
+      "test": "hard/c2",
+      "msg": "Score: 0.8400"
+    },
+    {
+      "level": "INFO",
+      "test": "hard_avg",
+      "msg": "Average hard score: 0.8625"
+    },
+    {
+      "level": "PASS",
+      "test": "invalid_task",
+      "msg": "Status: 400"
+    },
+    {
+      "level": "PASS",
+      "test": "invalid_index",
+      "msg": "Status: 400"
+    },
+    {
+      "level": "PASS",
+      "test": "invalid_action",
+      "msg": "Rejected invalid action: 422"
+    },
+    {
+      "level": "PASS",
+      "test": "empty_action",
+      "msg": "Status: 422"
+    },
+    {
+      "level": "PASS",
+      "test": "neg_index",
+      "msg": "Status: 400"
+    },
+    {
+      "level": "PASS",
+      "test": "semantic_match",
+      "msg": "Reward: 0.05"
+    },
+    {
+      "level": "PASS",
+      "test": "wrong_clause",
+      "msg": "Reward: -0.05"
+    },
+    {
+      "level": "PASS",
+      "test": "grader_no_steps",
+      "msg": "Score: 0.0"
+    },
+    {
+      "level": "PASS",
+      "test": "redundant_penalty",
+      "msg": "Reward: -0.03"
+    },
+    {
+      "level": "PASS",
+      "test": "submit_done",
+      "msg": "Submit correctly ends episode"
+    },
+    {
+      "level": "PASS",
+      "test": "step_after_done",
+      "msg": "Returns done=True, reward=0.0 after episode ends"
+    },
+    {
+      "level": "PASS",
+      "test": "load_test",
+      "msg": "20/20 in 6.45s (3.1 req/s)"
+    },
+    {
+      "level": "PASS",
+      "test": "latency/health",
+      "msg": "314ms"
+    },
+    {
+      "level": "PASS",
+      "test": "latency/tasks",
+      "msg": "494ms"
+    },
+    {
+      "level": "PASS",
+      "test": "latency/state",
+      "msg": "242ms"
+    },
+    {
+      "level": "PASS",
+      "test": "latency/grader",
+      "msg": "228ms"
+    }
+  ],
+  "scores": {
+    "easy_scores": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "medium_scores": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      0.8
+    ],
+    "hard_scores": [
+      0.8333,
+      0.9143,
+      0.84
+    ],
+    "avg_easy": 1.0,
+    "avg_medium": 0.96,
+    "avg_hard": 0.8625333333333334,
+    "overall": 0.9408444444444445
+  },
+  "summary": {
+    "total_tests": 37,
+    "pass": 37,
+    "fail": 0,
+    "warn": 0
+  }
+}

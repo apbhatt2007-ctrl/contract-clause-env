@@ -206,7 +206,7 @@ class ContractClauseEnv:
             return self._grade_medium()
         elif self._task_id == "contract_comparison":
             return self._grade_hard()
-        return 0.0
+        return 0.001
 
     # ═══════════════════════════════════════════════════
     # Private: action processing
@@ -593,7 +593,7 @@ class ContractClauseEnv:
         """Score = correct_identifications / total_clauses."""
         gt = self._contract.get("ground_truth", {})
         if not gt:
-            return 0.0
+            return 0.001
 
         total = len(gt)
         score = 0.0
@@ -614,13 +614,13 @@ class ContractClauseEnv:
             elif self._is_semantic_match(agent_guess, truth):
                 score += 0.5
 
-        return max(0.0, min(1.0, score / total))
+        return max(0.001, min(0.999, score / total))
 
     def _grade_medium(self) -> float:
         """Weighted: 40% risks_found, 30% severity, 30% reasoning."""
         gt_risks = self._contract.get("ground_truth_risks", [])
         if not gt_risks:
-            return 0.0
+            return 0.001
 
         # Risks found (40%)
         gt_indices = {r["section_index"] for r in gt_risks}
@@ -682,7 +682,7 @@ class ContractClauseEnv:
             + 0.3 * reasoning_score
             - fp_penalty
         )
-        return max(0.0, min(1.0, final))
+        return max(0.001, min(0.999, final))
 
     def _grade_hard(self) -> float:
         """Multi-component: changes(30%), impact(25%), amendments(25%), summary(20%)."""
@@ -690,7 +690,7 @@ class ContractClauseEnv:
         key_points = self._contract.get("summary_key_points", [])
 
         if not gt_changes:
-            return 0.0
+            return 0.001
 
         gt_indices = {c["section_index"] for c in gt_changes}
 
@@ -755,7 +755,7 @@ class ContractClauseEnv:
             + 0.20 * summary_score
             - fp_penalty
         )
-        return max(0.0, min(1.0, final))
+        return max(0.001, min(0.999, final))
 
     # ═══════════════════════════════════════════════════
     # Private: helpers

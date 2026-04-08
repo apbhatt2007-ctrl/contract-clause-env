@@ -1,0 +1,62 @@
+# Environment
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log
+
+# Binary / media files
+*.mp3
+*.wav
+*.mp4
+
+# Temp / debug files
+presubmit_results.txt
+push_log.txt
+RESULTS.md
+
+# Removed from submission (keep locally, not tracked)
+_clause_test.txt
+_comp_test.txt
+_risk_test.txt
+generate_audio.py
+generate_report.py
+TEAM_GUIDE.md
+# uv.lock
+# pyproject.toml
+server/Dockerfile
+server/requirements.txt
+random_results.txt
+learning_curve.csv
+code_context.md
+advanced_stress.py
+stress_report.md
+final_benchmark_report.md
+readiness_report.md
+project_summary.md

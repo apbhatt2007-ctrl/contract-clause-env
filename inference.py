@@ -368,8 +368,8 @@ def _build_risk_explanation(risk_type: str, section_text: str) -> str:
 def call_llm(messages: list[dict], retries: int = 3) -> str:
     """Call the LLM using the OpenAI SDK. Uses API_BASE_URL and API_KEY."""
     llm_client = OpenAI(
-        base_url=API_BASE_URL,
-        api_key=API_KEY,
+        base_url=os.environ["API_BASE_URL"] if "API_BASE_URL" in os.environ else API_BASE_URL,
+        api_key=os.environ["API_KEY"] if "API_KEY" in os.environ else API_KEY,
     )
     for attempt in range(1, retries + 1):
         try:

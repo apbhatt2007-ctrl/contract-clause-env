@@ -28,7 +28,7 @@ from server.environment import ContractClauseEnv, TASK_CONFIGS
 def clamp_score(score: float) -> float:
     """Ensure score is strictly within (0, 1), never exactly 0.0 or 1.0."""
     rounded = round(score, 4)
-    return max(0.0001, min(0.9999, rounded))
+    return max(0.001, min(0.999, rounded))
 
 
 # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

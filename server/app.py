@@ -25,6 +25,12 @@ from models import ContractAction, TaskDefinition
 from server.environment import ContractClauseEnv, TASK_CONFIGS
 
 
+def clamp_score(score: float) -> float:
+    """Ensure score is strictly within (0, 1), never exactly 0.0 or 1.0."""
+    rounded = round(score, 4)
+    return max(0.0001, min(0.9999, rounded))
+
+
 # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # Lifespan â€” initialise the shared environment instance
 # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -133,7 +139,7 @@ async def get_state():
 async def get_grade():
     """Return deterministic grade for the current episode."""
     score = env.grade()
-    return {"score": round(score, 4)}
+    return {"score": clamp_score(score)}
 
 
 @app.get("/baseline")
@@ -187,7 +193,7 @@ async def websocket_endpoint(ws: WebSocket):
 
             elif cmd == "grade":
                 score = env.grade()
-                await ws.send_json({"type": "grade", "data": {"score": round(score, 4)}})
+                await ws.send_json({"type": "grade", "data": {"score": clamp_score(score)}})
 
             else:
                 await ws.send_json({"type": "error", "message": f"Unknown command: {cmd}"})

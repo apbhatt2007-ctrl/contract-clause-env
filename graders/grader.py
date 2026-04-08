@@ -8,6 +8,11 @@ These functions are used by the environment's grade() method.
 from __future__ import annotations
 
 
+def clamp_score(score: float) -> float:
+    """Ensure score is strictly within (0, 1), never exactly 0.0 or 1.0."""
+    return max(0.0001, min(0.9999, float(score)))
+
+
 CLAUSE_ALIASES: dict[str, set[str]] = {
     "position": {"role", "duties", "appointment", "job", "responsibilities"},
     "compensation": {"salary", "pay", "wages", "remuneration", "earnings"},
@@ -40,7 +45,7 @@ def grade_clause_identification(
     Exact match = 1.0, semantic match = 0.5, wrong = 0.0.
     """
     if not ground_truth:
-        return 0.001
+        return clamp_score(0.0)
 
     total = len(ground_truth)
     score = 0.0
@@ -60,7 +65,7 @@ def grade_clause_identification(
         elif is_semantic_match(agent_guess, truth):
             score += 0.5
 
-    return max(0.001, min(0.999, score / total))
+    return clamp_score(score / total)
 
 
 def grade_risk_flagging(
@@ -74,7 +79,7 @@ def grade_risk_flagging(
     Weighted: 40% risks_found + 30% severity + 30% reasoning − false_positive_penalty.
     """
     if not ground_truth_risks:
-        return 0.001
+        return clamp_score(0.0)
 
     gt_indices = {r["section_index"] for r in ground_truth_risks}
 
@@ -82,7 +87,7 @@ def grade_risk_flagging(
     false_positives = sum(1 for fr in flagged_risks if fr.get("index") not in gt_indices)
 
     # Risks found (40%)
-    risks_found_score = len(correctly_flagged) / len(ground_truth_risks)
+    risks_found_score = clamp_score(len(correctly_flagged) / len(ground_truth_risks))
 
     # Severity accuracy (30%)
     severity_correct = 0
@@ -90,7 +95,7 @@ def grade_risk_flagging(
         gt_risk = next(r for r in ground_truth_risks if r["section_index"] == fr["index"])
         if fr.get("severity") == gt_risk.get("severity"):
             severity_correct += 1
-    severity_score = severity_correct / len(correctly_flagged) if correctly_flagged else 0.0
+    severity_score = clamp_score(severity_correct / len(correctly_flagged) if correctly_flagged else 0.0)
 
     # Reasoning quality (30%)
     reasoning_scores = []
@@ -101,15 +106,15 @@ def grade_risk_flagging(
             reasoning_lower = fr["reasoning"].lower()
             matches = sum(1 for kw in keywords if kw.lower() in reasoning_lower)
             ratio = matches / len(keywords) if keywords else 0.0
-            reasoning_scores.append(1.0 if ratio >= 0.5 else (0.5 if matches > 0 else 0.0))
+            reasoning_scores.append(clamp_score(1.0) if ratio >= 0.5 else (clamp_score(0.5) if matches > 0 else clamp_score(0.0)))
         else:
-            reasoning_scores.append(0.0)
-    reasoning_score = sum(reasoning_scores) / len(reasoning_scores) if reasoning_scores else 0.0
+            reasoning_scores.append(clamp_score(0.0))
+    reasoning_score = clamp_score(sum(reasoning_scores) / len(reasoning_scores) if reasoning_scores else 0.0)
 
     fp_penalty = false_positives * 0.1
 
     final = 0.4 * risks_found_score + 0.3 * severity_score + 0.3 * reasoning_score - fp_penalty
-    return max(0.001, min(0.999, final))
+    return clamp_score(final)
 
 
 def grade_contract_comparison(
@@ -126,14 +131,14 @@ def grade_contract_comparison(
     − false_positive_penalty.
     """
     if not ground_truth_changes:
-        return 0.001
+        return clamp_score(0.0)
 
     gt_indices = {c["section_index"] for c in ground_truth_changes}
     correctly_detected = [dc for dc in detected_changes if dc.get("index") in gt_indices]
     false_positives = sum(1 for dc in detected_changes if dc.get("index") not in gt_indices)
 
     # Changes found (30%)
-    changes_found_score = len(correctly_detected) / len(ground_truth_changes)
+    changes_found_score = clamp_score(len(correctly_detected) / len(ground_truth_changes))
 
     # Impact assessment (25%)
     impact_correct = 0
@@ -141,7 +146,7 @@ def grade_contract_comparison(
         gt_change = next(c for c in ground_truth_changes if c["section_index"] == dc["index"])
         if dc.get("impact") == gt_change.get("impact"):
             impact_correct += 1
-    impact_score = impact_correct / len(correctly_detected) if correctly_detected else 0.0
+    impact_score = clamp_score(impact_correct / len(correctly_detected) if correctly_detected else 0.0)
 
     # Amendment quality (25%)
     amendment_scores = []
@@ -154,8 +159,8 @@ def grade_contract_comparison(
             kw = gt_change["amendment_keywords"]
             text_lower = am.get("text", "").lower()
             matches = sum(1 for k in kw if k.lower() in text_lower)
-            amendment_scores.append(matches / len(kw) if kw else 0.0)
-    amendment_score = sum(amendment_scores) / len(amendment_scores) if amendment_scores else 0.0
+            amendment_scores.append(clamp_score(matches / len(kw) if kw else 0.0))
+    amendment_score = clamp_score(sum(amendment_scores) / len(amendment_scores) if amendment_scores else 0.0)
 
     # Summary (20%)
     if summary_key_points:
@@ -169,9 +174,9 @@ def grade_contract_comparison(
                 if kp_words and matches >= len(kp_words) * 0.4:
                     points_mentioned += 1
                     break
-        summary_score = points_mentioned / len(summary_key_points)
+        summary_score = clamp_score(points_mentioned / len(summary_key_points))
     else:
-        summary_score = 0.0
+        summary_score = clamp_score(0.0)
 
     fp_penalty = false_positives * 0.05
 
@@ -182,4 +187,4 @@ def grade_contract_comparison(
         + 0.20 * summary_score
         - fp_penalty
     )
-    return max(0.001, min(0.999, final))
+    return clamp_score(final)

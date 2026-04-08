@@ -17,6 +17,11 @@ from models import (
 from data import get_contracts
 
 
+def clamp_score(score: float) -> float:
+    """Ensure score is strictly within (0, 1), never exactly 0.0 or 1.0."""
+    return max(0.0001, min(0.9999, float(score)))
+
+
 # ═══════════════════════════════════════════════════════════
 # Semantic aliases for clause-type fuzzy matching (easy task)
 # ═══════════════════════════════════════════════════════════
@@ -201,12 +206,12 @@ class ContractClauseEnv:
     def grade(self) -> float:
         """Deterministic grading — same input always gives same output."""
         if self._task_id == "clause_identification":
-            return self._grade_easy()
+            return clamp_score(self._grade_easy())
         elif self._task_id == "risk_flagging":
-            return self._grade_medium()
+            return clamp_score(self._grade_medium())
         elif self._task_id == "contract_comparison":
-            return self._grade_hard()
-        return 0.001
+            return clamp_score(self._grade_hard())
+        return clamp_score(0.001)
 
     # ═══════════════════════════════════════════════════
     # Private: action processing
@@ -593,7 +598,7 @@ class ContractClauseEnv:
         """Score = correct_identifications / total_clauses."""
         gt = self._contract.get("ground_truth", {})
         if not gt:
-            return 0.001
+            return clamp_score(0.001)
 
         total = len(gt)
         score = 0.0
@@ -614,13 +619,13 @@ class ContractClauseEnv:
             elif self._is_semantic_match(agent_guess, truth):
                 score += 0.5
 
-        return max(0.001, min(0.999, score / total))
+        return clamp_score(score / total)
 
     def _grade_medium(self) -> float:
         """Weighted: 40% risks_found, 30% severity, 30% reasoning."""
         gt_risks = self._contract.get("ground_truth_risks", [])
         if not gt_risks:
-            return 0.001
+            return clamp_score(0.001)
 
         # Risks found (40%)
         gt_indices = {r["section_index"] for r in gt_risks}
@@ -632,7 +637,7 @@ class ContractClauseEnv:
             else:
                 false_positives += 1
 
-        risks_found_score = len(correctly_flagged) / len(gt_risks) if gt_risks else 0.0
+        risks_found_score = clamp_score(len(correctly_flagged) / len(gt_risks) if gt_risks else 0.0)
 
         # Severity accuracy (30%)
         severity_correct = 0
@@ -643,7 +648,7 @@ class ContractClauseEnv:
             if fr.get("severity") == gt_risk["severity"]:
                 severity_correct += 1
 
-        severity_score = (
+        severity_score = clamp_score(
             severity_correct / len(correctly_flagged) if correctly_flagged else 0.0
         )
 
@@ -659,15 +664,15 @@ class ContractClauseEnv:
                 reasoning_lower = fr["reasoning"].lower()
                 matches = sum(1 for kw in keywords if kw.lower() in reasoning_lower)
                 if matches >= len(keywords) * 0.5:
-                    reasoning_scores.append(1.0)
+                    reasoning_scores.append(clamp_score(1.0))
                 elif matches > 0:
-                    reasoning_scores.append(0.5)
+                    reasoning_scores.append(clamp_score(0.5))
                 else:
-                    reasoning_scores.append(0.0)
+                    reasoning_scores.append(clamp_score(0.0))
             else:
-                reasoning_scores.append(0.0)
+                reasoning_scores.append(clamp_score(0.0))
 
-        reasoning_score = (
+        reasoning_score = clamp_score(
             sum(reasoning_scores) / len(reasoning_scores)
             if reasoning_scores
             else 0.0
@@ -682,7 +687,7 @@ class ContractClauseEnv:
             + 0.3 * reasoning_score
             - fp_penalty
         )
-        return max(0.001, min(0.999, final))
+        return clamp_score(final)
 
     def _grade_hard(self) -> float:
         """Multi-component: changes(30%), impact(25%), amendments(25%), summary(20%)."""
@@ -690,7 +695,7 @@ class ContractClauseEnv:
         key_points = self._contract.get("summary_key_points", [])
 
         if not gt_changes:
-            return 0.001
+            return clamp_score(0.001)
 
         gt_indices = {c["section_index"] for c in gt_changes}
 
@@ -701,7 +706,7 @@ class ContractClauseEnv:
         false_positives = sum(
             1 for dc in self._detected_changes if dc["index"] not in gt_indices
         )
-        changes_found_score = len(correctly_detected) / len(gt_changes)
+        changes_found_score = clamp_score(len(correctly_detected) / len(gt_changes))
 
         # Impact assessment (25%)
         impact_correct = 0
@@ -711,7 +716,7 @@ class ContractClauseEnv:
             )
             if dc.get("impact") == gt_change["impact"]:
                 impact_correct += 1
-        impact_score = (
+        impact_score = clamp_score(
             impact_correct / len(correctly_detected) if correctly_detected else 0.0
         )
 
@@ -726,8 +731,8 @@ class ContractClauseEnv:
                 text_lower = am["text"].lower()
                 kw = gt_change["amendment_keywords"]
                 matches = sum(1 for k in kw if k.lower() in text_lower)
-                amendment_scores.append(matches / len(kw) if kw else 0.0)
-        amendment_score = (
+                amendment_scores.append(clamp_score(matches / len(kw) if kw else 0.0))
+        amendment_score = clamp_score(
             sum(amendment_scores) / len(amendment_scores)
             if amendment_scores
             else 0.0
@@ -742,9 +747,9 @@ class ContractClauseEnv:
                     if _partial_text_match(kp_lower, sp.lower()):
                         points_mentioned += 1
                         break
-            summary_score = points_mentioned / len(key_points)
+            summary_score = clamp_score(points_mentioned / len(key_points))
         else:
-            summary_score = 0.0
+            summary_score = clamp_score(0.0)
 
         fp_penalty = false_positives * 0.05
 
@@ -755,7 +760,7 @@ class ContractClauseEnv:
             + 0.20 * summary_score
             - fp_penalty
         )
-        return max(0.001, min(0.999, final))
+        return clamp_score(final)
 
     # ═══════════════════════════════════════════════════
     # Private: helpers

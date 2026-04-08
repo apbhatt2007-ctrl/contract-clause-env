@@ -28,11 +28,11 @@ from openai import OpenAI
 load_dotenv()
 
 # ─── Environment variables (MANDATORY) ────────────────────────────
-# Must read: API_BASE_URL, MODEL_NAME, HF_TOKEN
+# Must read: API_BASE_URL, MODEL_NAME, API_KEY
 # Must NOT use: OPENAI_API_KEY or OPENAI_MODEL
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
-HF_TOKEN = os.getenv("HF_TOKEN")
+API_KEY = os.getenv("API_KEY")
 
 # Optional - if you use from_docker_image():
 LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
@@ -366,10 +366,10 @@ def _build_risk_explanation(risk_type: str, section_text: str) -> str:
 # ═══════════════════════════════════════════════════════════════════
 
 def call_llm(messages: list[dict], retries: int = 3) -> str:
-    """Call the LLM using the OpenAI SDK. Uses API_BASE_URL and HF_TOKEN."""
+    """Call the LLM using the OpenAI SDK. Uses API_BASE_URL and API_KEY."""
     llm_client = OpenAI(
         base_url=API_BASE_URL,
-        api_key=HF_TOKEN,
+        api_key=API_KEY,
     )
     for attempt in range(1, retries + 1):
         try:
@@ -1267,10 +1267,10 @@ def main():
     parser.add_argument("--episode", type=int, default=0)
     args = parser.parse_args()
 
-    # BUG 3 — HF_TOKEN validation at startup
+    # BUG 3 — API_KEY validation at startup
     if args.mode == "openai":
-        if not os.environ.get("HF_TOKEN"):
-            raise SystemExit("ERROR: HF_TOKEN is not set. Exiting.")
+        if not os.environ.get("API_KEY"):
+            print("WARNING: API_KEY is not set. Inference might fail.")
 
     if args.base_url:
         global ENV_SERVER_URL

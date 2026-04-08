@@ -525,8 +525,8 @@ def run_task_random(task_id: str, episode: int = 0,
 
     except Exception as exc:
         print(f"\nERROR in random agent for {task_id}: {exc}", flush=True)
-        log_end(task_id, score=0.0, steps=0)
-        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
+        log_end(task_id, score=0.001, steps=0)
+        return {"task_id": task_id, "score": 0.001, "steps": 0, "max_steps": 0, "error": str(exc)}
 
 
 def run_task_qlearning(task_id: str, episode: int = 0, verbose: bool = False) -> dict:
@@ -540,12 +540,12 @@ def run_task_qlearning(task_id: str, episode: int = 0, verbose: bool = False) ->
 
     if task_id != "clause_identification":
         print("Q-Learning agent only trained for clause_identification.")
-        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0}
+        return {"task_id": task_id, "score": 0.001, "steps": 0, "max_steps": 0}
 
     q_file = "q_table.json"
     if not os.path.exists(q_file):
         print(f"ERROR: {q_file} not found. Run `python train_qlearning.py` first.")
-        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0}
+        return {"task_id": task_id, "score": 0.001, "steps": 0, "max_steps": 0}
 
     with open(q_file, "r") as f:
         Q = json.load(f)
@@ -604,8 +604,8 @@ def run_task_qlearning(task_id: str, episode: int = 0, verbose: bool = False) ->
 
     except Exception as exc:
         print(f"\nERROR in Q-learning agent for {task_id}: {exc}", flush=True)
-        log_end(task_id, score=0.0, steps=0)
-        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
+        log_end(task_id, score=0.001, steps=0)
+        return {"task_id": task_id, "score": 0.001, "steps": 0, "max_steps": 0, "error": str(exc)}
 
 def run_task_ppo(task_id: str, episode: int = 0, verbose: bool = False) -> dict:
     """Uses a pre-trained Deep RL PyTorch (Stable Baselines 3) agent."""
@@ -1241,13 +1241,13 @@ def run_task_openai(task_id: str, episode: int = 0,
     except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.TimeoutException) as exc:
         # BUG 4 — On ConnectError, print a clear message and log [END] with score=0.0
         print(f"\nCONNECTION ERROR for {task_id}: {exc}", flush=True)
-        log_end(task_id, score=0.0, steps=0)
-        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
+        log_end(task_id, score=0.001, steps=0)
+        return {"task_id": task_id, "score": 0.001, "steps": 0, "max_steps": 0, "error": str(exc)}
     except Exception as exc:
         print(f"\nUNEXPECTED ERROR for {task_id}: {exc}", flush=True)
         traceback.print_exc()
-        log_end(task_id, score=0.0, steps=0)
-        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
+        log_end(task_id, score=0.001, steps=0)
+        return {"task_id": task_id, "score": 0.001, "steps": 0, "max_steps": 0, "error": str(exc)}
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -1305,9 +1305,9 @@ def main():
             results.append(result)
         except Exception as exc:
             print(f"\nERROR running {tid}: {exc}", flush=True)
-            log_end(tid, score=0.0, steps=0)
+            log_end(tid, score=0.001, steps=0)
             results.append({
-                "task_id": tid, "score": 0.0,
+                "task_id": tid, "score": 0.001,
                 "steps": 0, "max_steps": 0, "error": str(exc),
             })
 

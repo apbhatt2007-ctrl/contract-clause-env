@@ -40,7 +40,7 @@ def grade_clause_identification(
     Exact match = 1.0, semantic match = 0.5, wrong = 0.0.
     """
     if not ground_truth:
-        return 0.0
+        return 0.001
 
     total = len(ground_truth)
     score = 0.0
@@ -60,7 +60,7 @@ def grade_clause_identification(
         elif is_semantic_match(agent_guess, truth):
             score += 0.5
 
-    return max(0.0, min(1.0, score / total))
+    return max(0.001, min(0.999, score / total))
 
 
 def grade_risk_flagging(
@@ -74,7 +74,7 @@ def grade_risk_flagging(
     Weighted: 40% risks_found + 30% severity + 30% reasoning − false_positive_penalty.
     """
     if not ground_truth_risks:
-        return 0.0
+        return 0.001
 
     gt_indices = {r["section_index"] for r in ground_truth_risks}
 
@@ -109,7 +109,7 @@ def grade_risk_flagging(
     fp_penalty = false_positives * 0.1
 
     final = 0.4 * risks_found_score + 0.3 * severity_score + 0.3 * reasoning_score - fp_penalty
-    return max(0.0, min(1.0, final))
+    return max(0.001, min(0.999, final))
 
 
 def grade_contract_comparison(
@@ -126,7 +126,7 @@ def grade_contract_comparison(
     − false_positive_penalty.
     """
     if not ground_truth_changes:
-        return 0.0
+        return 0.001
 
     gt_indices = {c["section_index"] for c in ground_truth_changes}
     correctly_detected = [dc for dc in detected_changes if dc.get("index") in gt_indices]
@@ -182,4 +182,4 @@ def grade_contract_comparison(
         + 0.20 * summary_score
         - fp_penalty
     )
-    return max(0.0, min(1.0, final))
+    return max(0.001, min(0.999, final))

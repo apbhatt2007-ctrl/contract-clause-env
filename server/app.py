@@ -134,12 +134,12 @@ async def get_state():
     """Get current episode state."""
     return env.state()
 
-
 @app.get("/grader")
 async def get_grade():
     """Return deterministic grade for the current episode."""
     score = env.grade()
-    return {"score": clamp_score(score)}
+    score = max(0.0001, min(0.9999, float(score)))  # clamp strictly inside (0,1)
+    return {"score": score}
 
 
 @app.get("/baseline")

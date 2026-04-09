@@ -10,7 +10,7 @@ from __future__ import annotations
 
 def clamp_score(score: float) -> float:
     """Ensure score is strictly within (0, 1), never exactly 0.0 or 1.0."""
-    return max(1e-6, min(1 - 1e-6, float(score)))
+    return max(0.001, min(1 - 0.001, float(score)))
 
 
 CLAUSE_ALIASES: dict[str, set[str]] = {

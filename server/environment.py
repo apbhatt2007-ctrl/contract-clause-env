@@ -19,7 +19,13 @@ from data import get_contracts
 
 def clamp_score(score: float) -> float:
     """Ensure score is strictly within (0, 1), never exactly 0.0 or 1.0."""
-    return max(0.001, min(0.999, float(score)))
+    try:
+        v = float(score)
+    except (TypeError, ValueError):
+        return 0.001
+    if v != v or v == float("inf") or v == float("-inf"):
+        return 0.001
+    return max(0.001, min(0.999, v))
 
 
 # ═══════════════════════════════════════════════════════════

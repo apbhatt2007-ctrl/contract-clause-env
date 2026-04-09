@@ -187,8 +187,20 @@ def log_step(step: int, action: dict, reward: float, obs: dict, reasoning: str =
     print(f"[STEP] {payload}", flush=True)
 
 
-def log_end(task_id: str, score: float, steps: int) -> None:
-    safe_score = max(0.001, min(0.999, float(score)))
+def _safe_score(score) -> float:
+    """Clamp any score value to strictly (0, 1). Used everywhere a score is emitted."""
+    try:
+        v = float(score)
+    except (TypeError, ValueError):
+        v = 0.001
+    # Guard against NaN / Inf
+    if v != v or v == float("inf") or v == float("-inf"):
+        v = 0.001
+    return max(0.001, min(0.999, v))
+
+
+def log_end(task_id: str, score, steps: int) -> None:
+    safe_score = _safe_score(score)
     payload = json.dumps({"task_id": task_id, "score": safe_score, "steps": steps}, separators=(",", ":"))
     print(f"[END] {payload}", flush=True)
 
@@ -1015,7 +1027,7 @@ def run_task_rule_based(task_id: str, episode: int = 0,
             resp.raise_for_status()
             grade = resp.json()
 
-        score = grade.get("score", 0.0)
+        score = _safe_score(grade.get("score", 0.001))
         log_end(task_id, score, steps)
 
         return {"task_id": task_id, "score": score, "steps": steps, "max_steps": max_steps}
@@ -1234,7 +1246,7 @@ def run_task_openai(task_id: str, episode: int = 0,
             resp.raise_for_status()
             grade = resp.json()
 
-        score = grade.get("score", 0.0)
+        score = _safe_score(grade.get("score", 0.001))
         log_end(task_id, score, steps)
 
         return {"task_id": task_id, "score": score, "steps": steps, "max_steps": max_steps}

@@ -27,7 +27,13 @@ from server.environment import ContractClauseEnv, TASK_CONFIGS
 
 def clamp_score(score: float) -> float:
     """Ensure score is strictly within (0, 1), never exactly 0.0 or 1.0."""
-    return max(0.001, min(0.999, float(score)))
+    try:
+        v = float(score)
+    except (TypeError, ValueError):
+        return 0.001
+    if v != v or v == float("inf") or v == float("-inf"):
+        return 0.001
+    return max(0.001, min(0.999, v))
 
 
 # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -137,7 +143,7 @@ async def get_state():
 async def get_grade():
     """Return deterministic grade for the current episode."""
     score = env.grade()
-    score = max(0.001, min(0.999, float(score)))  # clamp strictly inside (0,1)
+    score = clamp_score(score)  # guaranteed strictly within (0, 1)
     return {"score": score}
 
 

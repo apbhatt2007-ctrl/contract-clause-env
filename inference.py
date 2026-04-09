@@ -188,7 +188,7 @@ def log_step(step: int, action: dict, reward: float, obs: dict, reasoning: str =
 
 
 def log_end(task_id: str, score: float, steps: int) -> None:
-    safe_score = max(0.001, min(1 - 0.001, float(score)))
+    safe_score = max(0.001, min(0.999, float(score)))
     payload = json.dumps({"task_id": task_id, "score": safe_score, "steps": steps}, separators=(",", ":"))
     print(f"[END] {payload}", flush=True)
 
@@ -515,7 +515,7 @@ def run_task_random(task_id: str, episode: int = 0,
             # Get final score
             resp = safe_get(client, "/grader")
             resp.raise_for_status()
-            score = resp.json().get("score", 0.0)
+            score = resp.json().get("score", 0.001)
             log_end(task_id, score=score, steps=steps)
 
             if verbose:
@@ -594,7 +594,7 @@ def run_task_qlearning(task_id: str, episode: int = 0, verbose: bool = False) ->
 
             resp = safe_get(client, "/grader")
             resp.raise_for_status()
-            score = resp.json().get("score", 0.0)
+            score = resp.json().get("score", 0.001)
             log_end(task_id, score=score, steps=steps)
 
             if verbose:
@@ -656,7 +656,7 @@ def run_task_ppo(task_id: str, episode: int = 0, verbose: bool = False) -> dict:
         with httpx.Client(timeout=REQUEST_TIMEOUT, base_url=ENV_SERVER_URL) as client:
             resp = safe_get(client, "/grader")
             resp.raise_for_status()
-            score = resp.json().get("score", 0.0)
+            score = resp.json().get("score", 0.001)
             
         steps = env.steps
         log_end(task_id, score=score, steps=steps)

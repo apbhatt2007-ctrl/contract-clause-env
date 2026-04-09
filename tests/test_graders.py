@@ -58,7 +58,7 @@ class TestClauseIdentification:
             {"index": 1, "type": "compensation"},
             {"index": 2, "type": "termination"},
         ]
-        assert grade_clause_identification(identified, gt) == 1.0
+        assert grade_clause_identification(identified, gt) == pytest.approx(0.999, abs=0.001)
 
     def test_all_wrong(self):
         gt = {"0": "position", "1": "compensation"}
@@ -66,7 +66,7 @@ class TestClauseIdentification:
             {"index": 0, "type": "termination"},
             {"index": 1, "type": "confidentiality"},
         ]
-        assert grade_clause_identification(identified, gt) == 0.0
+        assert grade_clause_identification(identified, gt) == pytest.approx(0.001, abs=0.001)
 
     def test_partial_with_semantic_match(self):
         gt = {"0": "compensation", "1": "governing_law"}
@@ -84,17 +84,17 @@ class TestClauseIdentification:
         assert score == pytest.approx(1.0 / 3, abs=0.01)
 
     def test_empty_ground_truth(self):
-        assert grade_clause_identification([], {}) == 0.0
+        assert grade_clause_identification([], {}) == pytest.approx(0.001, abs=0.001)
 
     def test_empty_identifications(self):
         gt = {"0": "position"}
-        assert grade_clause_identification([], gt) == 0.0
+        assert grade_clause_identification([], gt) == pytest.approx(0.001, abs=0.001)
 
     def test_score_clamped_to_01(self):
         gt = {"0": "position"}
         identified = [{"index": 0, "type": "position"}]
         score = grade_clause_identification(identified, gt)
-        assert 0.0 <= score <= 1.0
+        assert 0.0 < score < 1.0
 
 
 # ═══════════════════════════════════════════════════════════
@@ -115,12 +115,12 @@ class TestRiskFlagging:
              "reasoning": "This clause has auto renewal with hidden terms."},
         ]
         score = grade_risk_flagging(flagged, gt_risks, sections)
-        assert score == pytest.approx(1.0, abs=0.01)
+        assert score == pytest.approx(0.999, abs=0.01)
 
     def test_no_risks_flagged(self):
         gt_risks = [{"section_index": 2, "risk_type": "auto_renewal", "severity": "high"}]
         score = grade_risk_flagging([], gt_risks, [])
-        assert score == 0.0
+        assert score == pytest.approx(0.001, abs=0.001)
 
     def test_false_positive_penalty(self):
         gt_risks = [{"section_index": 2, "risk_type": "auto_renewal", "severity": "high"}]
@@ -140,7 +140,7 @@ class TestRiskFlagging:
         assert score == pytest.approx(0.4, abs=0.01)
 
     def test_empty_ground_truth(self):
-        assert grade_risk_flagging([], [], []) == 0.0
+        assert grade_risk_flagging([], [], []) == pytest.approx(0.001, abs=0.001)
 
 
 # ═══════════════════════════════════════════════════════════
@@ -164,7 +164,7 @@ class TestContractComparison:
     def test_no_detections(self):
         gt_changes = [{"section_index": 0, "impact": "unfavorable", "amendment_keywords": ["restore"]}]
         score = grade_contract_comparison([], [], [], gt_changes, [])
-        assert score == 0.0
+        assert score == pytest.approx(0.001, abs=0.001)
 
     def test_false_positive_penalty(self):
         gt_changes = [{"section_index": 0, "impact": "unfavorable", "amendment_keywords": []}]
@@ -188,7 +188,7 @@ class TestContractComparison:
         gt_changes = [{"section_index": 0, "impact": "unfavorable", "amendment_keywords": []}]
         detected = [{"index": 0, "type": "modified", "impact": "unfavorable"}]
         score = grade_contract_comparison(detected, [], [], gt_changes, [])
-        assert 0.0 <= score <= 1.0
+        assert 0.0 < score < 1.0
 
 
 # ═══════════════════════════════════════════════════════════

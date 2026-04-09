@@ -151,7 +151,7 @@ SUMMARY_KEY_POINTS = [
 #
 #   [START] {"task_id": "...", "task_name": "..."}
 #   [STEP]  {"step": 1, "action": {...}, "reward": 0.0, "obs": {...}}
-#   [END]   {"task_id": "...", "score": 0.0, "steps": 0}
+#   [END]   {"task_id": "...", "score": 1e-6, "steps": 0}
 #
 # All payloads must be valid JSON on a single line after the tag.
 # ═══════════════════════════════════════════════════════════════════
@@ -188,7 +188,8 @@ def log_step(step: int, action: dict, reward: float, obs: dict, reasoning: str =
 
 
 def log_end(task_id: str, score: float, steps: int) -> None:
-    payload = json.dumps({"task_id": task_id, "score": score, "steps": steps}, separators=(",", ":"))
+    safe_score = max(1e-6, min(1 - 1e-6, float(score)))
+    payload = json.dumps({"task_id": task_id, "score": safe_score, "steps": steps}, separators=(",", ":"))
     print(f"[END] {payload}", flush=True)
 
 
@@ -614,7 +615,7 @@ def run_task_ppo(task_id: str, episode: int = 0, verbose: bool = False) -> dict:
         from stable_baselines3 import PPO
     except ImportError:
         print("ERROR: stable-baselines3 not installed. Run `pip install stable-baselines3 torch`.")
-        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0}
+        return {"task_id": task_id, "score": 1e-6, "steps": 0, "max_steps": 0}
         
     task_name = TASK_NAMES.get(task_id, task_id)
     if verbose:
@@ -624,12 +625,12 @@ def run_task_ppo(task_id: str, episode: int = 0, verbose: bool = False) -> dict:
 
     if task_id != "clause_identification":
         print("PPO agent only trained for clause_identification demo.")
-        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0}
+        return {"task_id": task_id, "score": 1e-6, "steps": 0, "max_steps": 0}
 
     model_file = "agent_ppo.zip"
     if not os.path.exists(model_file):
         print(f"ERROR: {model_file} not found. Run `python train_ppo.py` first.")
-        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0}
+        return {"task_id": task_id, "score": 1e-6, "steps": 0, "max_steps": 0}
 
     model = PPO.load(model_file)
     from env_wrapper import ContractClauseGymEnv
@@ -666,8 +667,8 @@ def run_task_ppo(task_id: str, episode: int = 0, verbose: bool = False) -> dict:
         return {"task_id": task_id, "score": score, "steps": steps, "max_steps": 50}
     except Exception as exc:
         print(f"\nERROR in PyTorch PPO agent for {task_id}: {exc}", flush=True)
-        log_end(task_id, score=0.0, steps=0)
-        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
+        log_end(task_id, score=1e-6, steps=0)
+        return {"task_id": task_id, "score": 1e-6, "steps": 0, "max_steps": 0, "error": str(exc)}
 
 # ═══════════════════════════════════════════════════════════════════
 # Task runner: Rule-based mode (FREE, no API key needed)
@@ -1022,13 +1023,13 @@ def run_task_rule_based(task_id: str, episode: int = 0,
     except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.TimeoutException) as exc:
         # BUG 4 — On ConnectError, print a clear message and log [END] with score=0.0
         print(f"\nCONNECTION ERROR for {task_id}: {exc}", flush=True)
-        log_end(task_id, score=0.0, steps=0)
-        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
+        log_end(task_id, score=1e-6, steps=0)
+        return {"task_id": task_id, "score": 1e-6, "steps": 0, "max_steps": 0, "error": str(exc)}
     except Exception as exc:
         print(f"\nUNEXPECTED ERROR for {task_id}: {exc}", flush=True)
         traceback.print_exc()
-        log_end(task_id, score=0.0, steps=0)
-        return {"task_id": task_id, "score": 0.0, "steps": 0, "max_steps": 0, "error": str(exc)}
+        log_end(task_id, score=1e-6, steps=0)
+        return {"task_id": task_id, "score": 1e-6, "steps": 0, "max_steps": 0, "error": str(exc)}
 
 
 # ═══════════════════════════════════════════════════════════════════

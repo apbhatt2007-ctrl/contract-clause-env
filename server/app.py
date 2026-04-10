@@ -45,6 +45,7 @@ env = ContractClauseEnv()
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
+    print("SERVER START: score clamping v22 active (0.001-0.999)", flush=True)
     yield
 
 

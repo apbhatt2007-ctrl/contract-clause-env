@@ -13,10 +13,10 @@ def clamp_score(score: float) -> float:
     try:
         v = float(score)
     except (TypeError, ValueError):
-        return 0.001
+        return 1e-4
     if v != v or v == float("inf") or v == float("-inf"):
-        return 0.001
-    return max(0.001, min(0.999, v))
+        return 1e-4
+    return max(1e-4, min(1 - 1e-4, v))
 
 
 CLAUSE_ALIASES: dict[str, set[str]] = {

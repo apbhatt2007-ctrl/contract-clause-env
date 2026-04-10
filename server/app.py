@@ -30,10 +30,10 @@ def clamp_score(score: float) -> float:
     try:
         v = float(score)
     except (TypeError, ValueError):
-        return 0.001
+        return 1e-4
     if v != v or v == float("inf") or v == float("-inf"):
-        return 0.001
-    return max(0.001, min(0.999, v))
+        return 1e-4
+    return max(1e-4, min(1 - 1e-4, v))
 
 
 # â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -45,7 +45,7 @@ env = ContractClauseEnv()
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    print("SERVER START: score clamping v22 active (0.001-0.999)", flush=True)
+    print("SERVER START: score clamping v23 active (1e-4 to 1-1e-4)", flush=True)
     yield
 
 

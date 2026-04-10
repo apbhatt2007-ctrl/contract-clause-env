@@ -22,10 +22,10 @@ def clamp_score(score: float) -> float:
     try:
         v = float(score)
     except (TypeError, ValueError):
-        return 0.001
+        return 1e-4
     if v != v or v == float("inf") or v == float("-inf"):
-        return 0.001
-    return max(0.001, min(0.999, v))
+        return 1e-4
+    return max(1e-4, min(1 - 1e-4, v))
 
 
 # ═══════════════════════════════════════════════════════════
@@ -217,7 +217,7 @@ class ContractClauseEnv:
             return clamp_score(self._grade_medium())
         elif self._task_id == "contract_comparison":
             return clamp_score(self._grade_hard())
-        return clamp_score(0.001)
+        return clamp_score(1e-4)
 
     # ═══════════════════════════════════════════════════
     # Private: action processing
@@ -604,7 +604,7 @@ class ContractClauseEnv:
         """Score = correct_identifications / total_clauses."""
         gt = self._contract.get("ground_truth", {})
         if not gt:
-            return clamp_score(0.001)
+            return clamp_score(1e-4)
 
         total = len(gt)
         score = 0.0
@@ -631,7 +631,7 @@ class ContractClauseEnv:
         """Weighted: 40% risks_found, 30% severity, 30% reasoning."""
         gt_risks = self._contract.get("ground_truth_risks", [])
         if not gt_risks:
-            return clamp_score(0.001)
+            return clamp_score(1e-4)
 
         # Risks found (40%)
         gt_indices = {r["section_index"] for r in gt_risks}
@@ -701,7 +701,7 @@ class ContractClauseEnv:
         key_points = self._contract.get("summary_key_points", [])
 
         if not gt_changes:
-            return clamp_score(0.001)
+            return clamp_score(1e-4)
 
         gt_indices = {c["section_index"] for c in gt_changes}
 

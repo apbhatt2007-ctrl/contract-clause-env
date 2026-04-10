@@ -1,6 +1,7 @@
 FROM python:3.11-slim
 WORKDIR /app
 COPY requirements.txt .
+# cache-bust: 2026-04-10-v21
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 EXPOSE 7860

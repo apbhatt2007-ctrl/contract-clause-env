@@ -1272,9 +1272,9 @@ def main():
         description="Run inference for Contract Clause Env (Team: Kernel Crafters)"
     )
     parser.add_argument("--task", type=str, default=None, choices=TASK_IDS)
-    parser.add_argument("--mode", type=str, default="openai",
+    parser.add_argument("--mode", type=str, default="rule",
                         choices=["rule", "openai", "random", "qlearning", "ppo"],
-                        help="'rule', 'openai', 'random', 'qlearning', or 'ppo'")
+                        help="'rule' (default, no API key needed), 'openai', 'random', 'qlearning', or 'ppo'")
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--base-url", type=str, default=None)
     parser.add_argument("--episode", type=int, default=0)

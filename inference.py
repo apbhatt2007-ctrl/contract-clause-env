@@ -49,6 +49,23 @@ DEFAULT_MAX_STEPS = {
     "contract_comparison": 55,
 }
 
+
+def _wait_for_server(url: str, retries: int = 30, delay: float = 2.0) -> bool:
+    """Wait for the environment server to be ready before running inference."""
+    import httpx as _httpx
+    for i in range(retries):
+        try:
+            r = _httpx.get(f"{url}/health", timeout=5)
+            if r.status_code == 200:
+                print(f"[INFO] Server ready at {url}", flush=True)
+                return True
+        except Exception:
+            pass
+        print(f"[INFO] Waiting for server... ({i+1}/{retries})", flush=True)
+        time.sleep(delay)
+    print(f"[ERROR] Server not ready after {retries} retries", flush=True)
+    return False
+
 # HTTP timeout for all client.post() / client.get() calls (BUG 4)
 REQUEST_TIMEOUT = 30
 
@@ -1288,6 +1305,9 @@ def main():
     if args.base_url:
         global ENV_SERVER_URL
         ENV_SERVER_URL = args.base_url
+
+    # Wait for server to be ready before running inference
+    _wait_for_server(ENV_SERVER_URL)
 
     tasks = [args.task] if args.task else TASK_IDS
 
